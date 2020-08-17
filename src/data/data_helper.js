@@ -7,18 +7,14 @@ import { updateFirebase } from "./firebase_helper";
 // 4: Postgres
 // Etc
 // TODO: Add functions for more databases in separate files
-const databaseType: number =
-    parseInt(process.env["DATABASE_TYPE"] as string) || 2;
+const databaseType = parseInt(process.env["DATABASE_TYPE"]) || 1;
 
 /**
  * @param  {Object} data
  * @param  {string|undefined=undefined} location
  * @param  {string|undefined=undefined} firebaseLocation
  */
-export function updateDatabase(
-    data: Object,
-    firebaseLocation: string | undefined = undefined
-) {
+export function updateDatabase(data, firebaseLocation = undefined) {
     if (databaseType == 1) {
         firebaseLocation != undefined
             ? updateFirebase((data = data), (location = firebaseLocation))

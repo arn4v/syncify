@@ -6,6 +6,7 @@
     "scripts": {
         "build": "tsc",
         "build:dev": "tsc -w",
+        "clean": "rm -rf ./build",
         "format": "prettier --write \"./src/**/*.{js,ts,json}\"",
         "start": "node build/app.js",
         "start:dev": "nodemon build/app.js"
@@ -21,9 +22,11 @@
         "@feathersjs/feathers": "^4.5.8",
         "cookie-parser": "^1.4.5",
         "cors": "^2.8.5",
+        "discord.js": "^12.3.1",
         "dotenv": "^8.2.0",
         "firebase": "^7.18.0",
-        "request": "^2.88.2"
+        "request": "^2.88.2",
+        "typeorm": "^0.2.25"
     },
     "devDependencies": {
         "@types/cookie-parser": "^1.4.2",

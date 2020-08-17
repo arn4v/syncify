@@ -1,15 +1,15 @@
 import querystring from "querystring";
 import request from "request";
 import { Router } from "@feathersjs/express";
-import { updateDatabase } from "src/data/data_helper";
+import { updateDatabase } from "../data/data_helper";
 
 const router: any = Router();
 
-var client_id: string | undefined = process.env.SPOTIFY_CLIENT_ID;
-var client_secret: string | undefined = process.env.SPOTIFY_CLIENT_SECRET;
+let client_id: string = process.env.SPOTIFY_CLIENT_ID as string;
+let client_secret: string = process.env.SPOTIFY_CLIENT_SECRET as string;
 
-var stateKey = "spotify_auth_state";
-var discordConfig = {
+let stateKey: string = "spotify_auth_state";
+let discordConfig: any = {
     discordServerID: undefined,
     discordUserID: undefined,
 };
@@ -21,41 +21,42 @@ var discordConfig = {
  * @returns {string}
  */
 function generateRandomString(length: number): string {
-    var text: string = "";
-    var possible: string =
+    let text: string = "";
+    let possible: string =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-    for (var i: number = 0; i < length; i++) {
+    for (let i: number = 0; i < length; i++) {
         text += possible.charAt(Math.floor(Math.random() * possible.length));
     }
     return text;
 }
 
 router.get("/auth", function (req: any, res: any) {
-    var redirect_url = req.protocol + "://" + req.get("host") + "/callback";
+    let redirect_uri = req.protocol + "://" + req.get("host") + "/callback";
 
     // register discord origin
     discordConfig.discordServerID = req.query.client_id;
     discordConfig.discordUserID = req.query.user_id;
 
-    var state: string = generateRandomString(16);
+    let state: string = generateRandomString(16);
     res.cookie(stateKey, state);
 
     var scope = [
-        "router.remote-control",
+        "app-remote-control",
         "streaming",
         "user-read-currently-playing",
         "user-modify-playback-state",
         "user-read-playback-state",
     ].join(" ");
 
-    var authQParams = {
+    let authQParams = {
         response_type: "code",
         client_id,
         scope,
-        redirect_url,
+        redirect_uri,
         state,
     };
+
     res.redirect(
         `https://accounts.spotify.com/authorize?${querystring.stringify(
             authQParams
@@ -72,9 +73,9 @@ router.get("/callback", function (req: any, res: any) {
         res.redirect("/#" + querystring.stringify({ error: "state_mismatch" }));
     } else {
         res.clearCookie(stateKey);
-        var redirect_uri: string =
+        let redirect_uri: string =
             req.protocol + "://" + req.get("host") + "/callback";
-        var authOptions: any = {
+        let authOptions: any = {
             url: "https://accounts.spotify.com/api/token",
             form: { code, redirect_uri, grant_type: "authorization_code" },
             headers: {
@@ -93,13 +94,13 @@ router.get("/callback", function (req: any, res: any) {
             body: any
         ) {
             if (!error && response.statusCode === 200) {
-                var access_token = body.access_token;
-                var refresh_token = body.refresh_token;
+                let access_token = body.access_token;
+                let refresh_token = body.refresh_token;
 
                 const { discordServerID, discordUserID } = discordConfig;
 
                 if (discordServerID && discordUserID) {
-                    var loc = `${discordServerID}/${discordUserID}`;
+                    // let loc: string = `${discordServerID}/${discordUserID}`;
                     updateDatabase({
                         spotify_access_token: access_token,
                         spotify_refresh_token: refresh_token,

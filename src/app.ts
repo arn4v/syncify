@@ -1,19 +1,18 @@
-import * as authUiRouter from "./auth_ui/router";
-import cookieParser from "cookie-parser";
-import cors from "cors";
+import checkEnv from "./check_env";
 import dotenv from "dotenv";
-import express from "@feathersjs/express";
-import path from "path";
 
 dotenv.config();
-const PORT = process.env.PORT || 8888;
-const app = express();
+checkEnv();
 
-app.use(express.static(path.join(path.resolve(__dirname), "../public")));
-app.use(cors());
-app.use(cookieParser());
-app.use(authUiRouter.default);
+import { startDiscordBot } from "./discord/bot";
+import { startServer } from "./server";
 
-app.listen(PORT, () => {
-    console.log(`Listening at port ${PORT}`);
-});
+startServer();
+
+if ((process.env.DISCORD_BOT as string) == "true") {
+    startDiscordBot();
+} else {
+    console.log(
+        "LOG: DISCORD_BOT environment variable not set, not starting Discord bot."
+    );
+}

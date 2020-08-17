@@ -9,10 +9,7 @@ firebase.initializeApp(firebaseConfig);
  * @param  {Object} data
  * @param  {string|undefined=undefined} location
  */
-export function updateFirebase(
-    data: Object,
-    location: string | undefined = undefined
-) {
-    let loc: string = location == undefined ? "userInfo" : location;
-    firebase.database().ref(location).update(data);
+export function updateFirebase(data, location = undefined) {
+    let loc = location == undefined ? "userInfo" : location;
+    firebase.database().ref(loc).update(data);
 }

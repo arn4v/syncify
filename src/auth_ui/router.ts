@@ -1,7 +1,7 @@
+import DataHelper from "../data/data_helper";
 import querystring from "querystring";
 import request from "request";
 import { Router } from "@feathersjs/express";
-import { updateDatabase } from "../data/data_helper";
 
 const router: any = Router();
 
@@ -101,7 +101,7 @@ router.get("/callback", function (req: any, res: any) {
 
                 if (discordServerID && discordUserID) {
                     // let loc: string = `${discordServerID}/${discordUserID}`;
-                    updateDatabase({
+                    DataHelper.updateDatabase({
                         spotify_access_token: access_token,
                         spotify_refresh_token: refresh_token,
                     });

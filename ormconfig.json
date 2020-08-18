@@ -2,14 +2,13 @@
     "type": "sqlite",
     "database": "./build/syncify.sqlite",
     "synchronize": true,
-    "logging": false,
-    "entities": ["src/data/typeorm/entity/**/*.ts"],
-    "migrations": ["src/data/typeorm/migration/**/*.ts"],
-    "subscribers": ["src/data/typeorm/subscriber/**/*.ts"],
+    "logging": "query",
+    "entities": ["build/data/typeorm/entity/**/*.js"],
+    "migrations": ["build/data/typeorm/migration/**/*.js"],
+    "subscribers": ["build/data/typeorm/subscriber/**/*.js"],
     "cli": {
-        "entitiesDir": "src/data/typeorm/entity",
-        "migrationsDir": "src/data/typeorm/migration",
-        "subscribersDir": "src/data/typeorm/subscriber"
+        "entitiesDir": "build/data/typeorm/entity",
+        "migrationsDir": "build/data/typeorm/migration",
+        "subscribersDir": "build/data/typeorm/subscriber"
     }
 }
-

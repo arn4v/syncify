@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Generated, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Generated, Column, CreateDateColumn } from "typeorm";
 
 @Entity()
 export class User {
@@ -9,18 +9,17 @@ export class User {
     @Generated("uuid")
     syncifyUserId: string;
 
-    @Column("int")
-    discordUserId: number;
+    @Column()
+    discordUserId: string;
 
-    // @Column()
-    // telegramId: number;
-
-    @Column("text")
+    @Column()
     spotifyAccessToken: string;
 
-    @Column("text")
+    @Column()
     spotifyRefreshToken: string;
 
-    @Column("text")
+    @CreateDateColumn()
     createdAt: string;
 }
+// @Column()
+// telegramId: number;

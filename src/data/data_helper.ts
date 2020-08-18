@@ -40,6 +40,7 @@ export default class DataHelper {
         spotifyRefreshToken: string,
         platformInfo: any
     ) {
+        console.log(platformInfo);
         ORMHelper.addUser(
             (spotifyAccessToken = spotifyAccessToken),
             (spotifyRefreshToken = spotifyRefreshToken),
@@ -47,8 +48,7 @@ export default class DataHelper {
         );
     }
 
-    // public static fetchToken(
-    //     discordId: string | undefined = undefined,
-    //     telegramId: string | undefined = undefined
-    // ) {}
+    public static fetchSpotifyTokens(platformInfo: any): Promise<any> {
+        return ORMHelper.fetchSpotifyTokens(platformInfo);
+    }
 }

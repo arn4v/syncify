@@ -20,6 +20,7 @@
     "dependencies": {
         "@feathersjs/express": "^4.5.8",
         "@feathersjs/feathers": "^4.5.8",
+        "axios": "^0.19.2",
         "cookie-parser": "^1.4.5",
         "cors": "^2.8.5",
         "discord.js": "^12.3.1",

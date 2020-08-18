@@ -1,29 +1,6 @@
 import { createConnection, getConnection } from "typeorm";
 import { User } from "./typeorm/entity/user.entity";
 
-// const connectionConfig: Object = (): Object => {
-//     let databaseType: number = parseInt(process.env["DATABASE_TYPE"] as string);
-//     if (databaseType == 2) {
-//         return {
-//             type: "sqlite",
-//             database: path.join(path.resolve(__dirname), "../syncify.db"),
-//         };
-//     }
-// };
-
-// interface User {
-//     id: number;
-//     syncifyUserId: string;
-//     discordUserId: string;
-//     spotifyAccessToken: string;
-//     spotifyRefreshToken: string;
-//     createdAt: string;
-// }
-
-const connection = async () => {
-    return createConnection();
-};
-
 export class ORMHelper {
     private static _connection: any;
     private _instance: ORMHelper;
@@ -61,11 +38,12 @@ export class ORMHelper {
         spotifyRefreshToken: string,
         platformInfo: any
     ) {
+        let connection = getConnection();
         let discordUserId: string | undefined =
             platformInfo.discordUserId || undefined;
         let telegramUserId: string | undefined =
             platformInfo.telegramUserId || undefined;
-        let addUser = async (connection: any) => {
+        let addUser = async () => {
             let user: any = new User();
             let platform: number = platformInfo.platformType;
 
@@ -83,23 +61,24 @@ export class ORMHelper {
                     `LOG: User ${user.syncifyUserId} successfully created`
                 );
             });
-            connection
-                .getRepository(User)
-                .findOne({ where: { discordUserId: discordUserId } })
-                .then((data: object) => {
-                    if (data == undefined) {
-                        addUser(connection);
-                    } else {
-                        console.log(
-                            `LOG: OrmHelper: addUser: User ${discordUserId} already exists...`
-                        );
-                    }
-                })
-                .catch((error: string) => {
-                    `LOG: OrmHelper: findOne catch block: Error: ${error}`;
-                });
         };
-        addUser(connection());
+
+        connection
+            .getRepository(User)
+            .findOne({ where: { discordUserId: discordUserId } })
+            // @ts-expect-error
+            .then((data: object) => {
+                if (data == undefined) {
+                    addUser();
+                } else {
+                    console.log(
+                        `LOG: OrmHelper: addUser: User ${discordUserId} already exists...`
+                    );
+                }
+            })
+            .catch((error: string) => {
+                `LOG: OrmHelper: findOne catch block: Error: ${error}`;
+            });
     }
 
     public static async fetchSpotifyTokens(platformInfo: any) {
@@ -107,12 +86,12 @@ export class ORMHelper {
             platformInfo.discordUserId || undefined;
         let telegramUserId: string | undefined =
             platformInfo.telegramUserId || undefined;
-        let spotifyInfo = {
-            spotifyAccessToken: undefined,
-            spotifyRefreshToken: undefined,
-        };
-        var connection: any = connection;
-        async function getData() {
+        let connection: any = getConnection();
+        let data = async () => {
+            let spotifyInfo = {
+                spotifyAccessToken: undefined,
+                spotifyRefreshToken: undefined,
+            };
             await connection
                 .getRepository(User)
                 .findOne({
@@ -128,16 +107,50 @@ export class ORMHelper {
                     spotifyInfo.spotifyAccessToken = data.spotifyAccessToken;
                     // @ts-ignore
                     spotifyInfo.spotifyRefreshToken = data.spotifyRefreshToken;
-                    return spotifyInfo;
                 })
                 .catch((error: string) => {
                     console.log(
                         `LOG: ORMHelper -> fetchSpotifyTokens: ${error}`
                     );
                 });
-        }
-        getData().then(() => console.log("Done"));
-        return spotifyInfo;
+            return spotifyInfo;
+        };
+        return data;
+    }
+
+    public static async updateSpotifyTokens(
+        accessToken: string,
+        platformInfo: any
+    ) {
+        let discordUserId: string | undefined =
+            platformInfo.discordUserId || undefined;
+        let telegramUserId: string | undefined =
+            platformInfo.telegramUserId || undefined;
+        let userLogMessage =
+            platformInfo.platformType == 1
+                ? "Discord user" + discordUserId
+                : "Telegram user" + telegramUserId;
+        let connection: any = getConnection();
+        connection
+            .then(async (connection: any) => {
+                let userRepo = connection.getRepository(User);
+                let user = userRepo.findOne({
+                    where:
+                        platformInfo.platformType == 1
+                            ? { discordUserId: discordUserId }
+                            : { telegramUserId: telegramUserId },
+                });
+                user.spotifyAccessToken = accessToken;
+                await userRepo.save(user);
+                console.log(
+                    `LOG: ORMHelper: updateSpotifyTokens: successfully updated access token for user ${userLogMessage}`
+                );
+            })
+            .catch((error: string) =>
+                console.log(
+                    `LOG: ORMHelper: updateSpotifyTokens: Error updating token: ${error}`
+                )
+            );
     }
 
     // public static registerGroup(platformInfo: any) {}

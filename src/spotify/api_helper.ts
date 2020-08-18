@@ -1,89 +1,109 @@
-import request from "request";
+import axios from "axios";
+import DataHelper from "../data/data_helper";
 
 export class SpotifyHelper {
-    public static getTrackInfo(
-        spotifyAccessToken: string,
-        spotifyRefreshToken: string
-    ): any {
-        let returnString: string = "";
-        let options = {
-            url: "https://api.spotify.com/v1/me/player/currently-playing",
-            headers: {
-                Authorization: "Bearer " + spotifyAccessToken,
-            },
-            json: true,
-        };
+    // private static _instance: any;
+    private static baseUrl: string = "https://api.spotify.com/v1";
 
-        request.get(options, function (error, response, body) {
-            if (body.error) {
-                switch (body.error.status) {
-                    case 401: {
-                        var authOptions = {
-                            url: "https://accounts.spotify.com/api/token",
-                            headers: {
-                                Authorization:
-                                    "Basic " +
-                                    Buffer.from(
-                                        process.env.SPOTIFY_CLIENT_ID +
-                                            ":" +
-                                            process.env.SPOTIFY_CLIENT_SECRET
-                                    ).toString("base64"),
-                            },
-                            form: {
-                                grant_type: "refresh_token",
-                                refresh_token: spotifyRefreshToken,
-                            },
-                            json: true,
-                        };
+    // private static get instance() {
+    //     if (this._instance != null) return this._instance;
+    //     this._instance = axios.create({
+    //         baseURL: "https://api.spotify.com/v1/",
+    //     });
+    // }
 
-                        request.post(
-                            authOptions,
-                            (_error, _response, _body) => {
-                                if (!_error && _response.statusCode === 200) {
-                                    // firebase
-                                    //     .database()
-                                    //     .ref(loc)
-                                    //     .update({
-                                    //         spotifyAccessToken:
-                                    //             _body.access_token,
-                                    //     });
+    // private static async refreshAccessToken(
+    //     spotifyInfo: any,
+    //     platformInfo: any
+    // ) {
+    //     let spotifyAccessToken: string = spotifyInfo.spotifyAccessToken;
+    //     let spotifyRefreshToken: string = spotifyInfo.spotifyRefreshToken;
+    // }
 
-                                    options.headers = {
-                                        Authorization:
-                                            "Bearer " + _body.access_token,
-                                    };
+    public static async getTrackInfo(spotifyInfo: any, platformInfo: any) {
+        let spotifyAccessToken: string = spotifyInfo.spotifyAccessToken;
+        let spotifyRefreshToken: string = spotifyInfo.spotifyRefreshToken;
+        let reqUrl = this.baseUrl + "/me/player/currently-playing";
 
-                                    request.get(options, function (
-                                        __error,
-                                        __response,
-                                        __body
-                                    ) {
-                                        var song = __body.item.name;
-                                        var artists = __body.item.artists
-                                            // @ts-expect-error
-                                            .map((e) => e.name)
-                                            .join(", ");
-                                        returnString += `> ${song} - ${artists}`;
-                                    });
-                                }
-                            }
-                        );
-                        break;
+        const trackInfo = async () => {
+            let songInfo = {
+                name: undefined,
+                artists: undefined,
+            };
+
+            await axios
+                .get(reqUrl, {
+                    headers: { Authorization: `Bearer ${spotifyAccessToken}` },
+                })
+                .then((response) => {
+                    switch (response.status) {
+                        case 401: {
+                            axios
+                                .post(
+                                    "https://accounts.spotify.com/api/token",
+                                    {
+                                        headers: {
+                                            Authorization:
+                                                "Basic " +
+                                                Buffer.from(
+                                                    process.env
+                                                        .SPOTIFY_CLIENT_ID +
+                                                        ":" +
+                                                        process.env
+                                                            .SPOTIFY_CLIENT_SECRET
+                                                ).toString("base64"),
+                                        },
+                                        form: {
+                                            grant_type: "refresh_token",
+                                            refresh_token: spotifyRefreshToken,
+                                        },
+                                    }
+                                )
+                                .then(async (response) => {
+                                    if (response.status == 200) {
+                                        DataHelper.updateSpotifyAccessToken(
+                                            response.data.access_token,
+                                            platformInfo
+                                        );
+                                        await axios
+                                            .get(reqUrl, {
+                                                headers: {
+                                                    Authorization: `Bearer ${spotifyAccessToken}`,
+                                                },
+                                            })
+                                            .then((_response) => {
+                                                songInfo.name =
+                                                    _response.data.item.name;
+                                                songInfo.artists = _response.data.item.artists
+                                                    // @ts-ignore
+                                                    .map((e) => e.name)
+                                                    .join(", ");
+                                            });
+                                    }
+                                })
+                                .catch((error) =>
+                                    console.log(
+                                        `LOG: ERROR: SpotifyHelper.refreshAccessToken: ${error}`
+                                    )
+                                );
+                            break;
+                        }
+                        default: {
+                            songInfo.name = response.data.item.name;
+                            songInfo.artists = response.data.item.artists
+                                // @ts-ignore
+                                .map((e) => e.name)
+                                .join(", ");
+                        }
                     }
-                    default:
-                        console.log(body.error);
-                        break;
-                }
-                return;
-            }
-            var song = body.item.name;
-            var artists = body.item.artists
-                // @ts-expect-error
-                .map((e) => e.name)
-                .join(", ");
-            returnString += `> ${song} - ${artists}`;
-        });
+                    // let data = JSON.parse(response.data);
+                    // songInfo.name = data.
+                    return trackInfo;
+                })
+                .catch((error) => console.log(error));
 
-        return returnString;
+            return songInfo;
+        };
+        return trackInfo;
     }
 }

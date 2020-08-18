@@ -105,6 +105,10 @@ router.get("/callback", function (req: any, res: any) {
                         discordUserId: discordUserID,
                     });
                 }
+                res.redirect(
+                    "/#" +
+                        querystring.stringify({ access_token, refresh_token })
+                );
             } else {
                 res.redirect(
                     "/#" + querystring.stringify({ error: "invalid_token" })

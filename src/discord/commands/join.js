@@ -2,7 +2,7 @@ import querystring from "querystring";
 
 let server_url =
     process.env["SYNCIFY_SERVER_BASE_URL"] != undefined
-        ? process.env["SYNCIFY_SERVER_BASE_URL"] + "/auth]"
+        ? process.env["SYNCIFY_SERVER_BASE_URL"] + "/auth"
         : "http://localhost:8888/auth";
 
 module.exports = {

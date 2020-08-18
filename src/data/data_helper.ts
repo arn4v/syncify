@@ -48,7 +48,14 @@ export default class DataHelper {
         );
     }
 
-    public static fetchSpotifyTokens(platformInfo: any): Promise<any> {
+    public static fetchSpotifyTokens(platformInfo: any) {
         return ORMHelper.fetchSpotifyTokens(platformInfo);
+    }
+
+    public static updateSpotifyAccessToken(
+        accessToken: string,
+        platformInfo: any
+    ) {
+        ORMHelper.updateSpotifyTokens(accessToken, platformInfo);
     }
 }

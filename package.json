@@ -8,7 +8,7 @@
         "build:dev": "tsc -w",
         "clean": "rm -rf ./build",
         "format": "prettier --write \"./src/**/*.{js,ts,json}\"",
-        "start": "node build/app.js",
+        "start": "ts-node src/index.ts",
         "start:dev": "nodemon build/app.js"
     },
     "author": "",
@@ -16,7 +16,7 @@
         "Arnav Gosain <>",
         "Ishan Saxena <>"
     ],
-    "license": "ISC",
+    "license": "MIT",
     "dependencies": {
         "@feathersjs/express": "^4.5.8",
         "@feathersjs/feathers": "^4.5.8",
@@ -25,18 +25,22 @@
         "discord.js": "^12.3.1",
         "dotenv": "^8.2.0",
         "firebase": "^7.18.0",
+        "reflect-metadata": "^0.1.10",
         "request": "^2.88.2",
-        "typeorm": "^0.2.25"
+        "sqlite3": "^4.0.3",
+        "typeorm": "0.2.25"
     },
     "devDependencies": {
         "@types/cookie-parser": "^1.4.2",
         "@types/cors": "^2.8.7",
-        "@types/node": "^14.0.27",
+        "@types/node": "^8.0.29",
         "@types/request": "^2.48.5",
+        "@types/sqlite3": "^3.1.6",
         "@types/ws": "^7.2.6",
         "nodemon": "^2.0.4",
         "prettier": "^2.0.5",
-        "typescript": "^3.9.7"
+        "typescript": "3.3.3333",
+        "ts-node": "3.3.0"
     },
     "prettier": {
         "printWidth": 80,

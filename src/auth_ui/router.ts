@@ -97,13 +97,12 @@ router.get("/callback", function (req: any, res: any) {
                 let access_token = body.access_token;
                 let refresh_token = body.refresh_token;
 
-                const { discordServerID, discordUserID } = discordConfig;
+                const discordUserID = discordConfig.discordUserID;
 
-                if (discordServerID && discordUserID) {
-                    // let loc: string = `${discordServerID}/${discordUserID}`;
-                    DataHelper.updateDatabase({
-                        spotify_access_token: access_token,
-                        spotify_refresh_token: refresh_token,
+                if (discordUserID) {
+                    DataHelper.addUser(access_token, refresh_token, {
+                        platformType: 1,
+                        discordUserId: discordUserID,
                     });
                 }
 

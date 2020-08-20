@@ -1,4 +1,4 @@
-import * as authUiRouter from "./auth_ui/router";
+import * as authUiRouter from "./router";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "@feathersjs/express";

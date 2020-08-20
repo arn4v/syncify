@@ -6,29 +6,8 @@ import { ORMHelper } from "./orm_helper";
 // Etc
 // TODO: Add functions for more databases in separate files
 
-/**
- * @param  {Object} data
- * @param  {string|undefined=undefined} location
- * @param  {string|undefined=undefined} firebaseLocation
- */
 export default class DataHelper {
-    // private static databaseType =
-    //     process.env["DATABASE_TYPE"] != undefined
-    //         ? parseInt(process.env["DATABASE_TYPE"] as string)
-    //         : 1;
-
     constructor() {}
-
-    // public static updateDatabase(data: any, firebaseLocation: any = undefined) {
-    //     // if (this.databaseType == 1) {
-    //     //     firebaseLocation != undefined
-    //     //         ? FirebaseHelper.updateFirebase(
-    //     //               (data = data),
-    //     //               (location = firebaseLocation)
-    //     //           )
-    //     //         : FirebaseHelper.updateFirebase((data = data));
-    //     // }
-    // }
 
     /**
      * @param  {string} spotifyAccessToken
@@ -40,7 +19,6 @@ export default class DataHelper {
         spotifyRefreshToken: string,
         platformInfo: any
     ) {
-        console.log(platformInfo);
         ORMHelper.addUser(
             (spotifyAccessToken = spotifyAccessToken),
             (spotifyRefreshToken = spotifyRefreshToken),
@@ -57,5 +35,13 @@ export default class DataHelper {
         platformInfo: any
     ) {
         ORMHelper.updateSpotifyTokens(accessToken, platformInfo);
+    }
+
+    public static createSession(platformInfo: any) {
+        return ORMHelper.createSession(platformInfo);
+    }
+
+    public static joinSession(platformInfo: any) {
+        return ORMHelper.joinSession(platformInfo);
     }
 }

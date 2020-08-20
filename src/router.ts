@@ -1,4 +1,4 @@
-import DataHelper from "../data/data_helper";
+import DataHelper from "./data/data_helper";
 import querystring from "querystring";
 import request from "request";
 import { Router } from "@feathersjs/express";

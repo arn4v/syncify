@@ -37,4 +37,15 @@ export default function checkEnv() {
             );
         }
     }
+
+    if (
+        process.env.TELEGRAM_BOT != undefined ||
+        process.env.TELEGRAM_BOT == "true"
+    ) {
+        if (process.env.TELEGRAM_BOT_TOKEN == undefined) {
+            sys.exit(
+                "Add TELEGRAM_BOT_TOKEN to your .env / environment variables"
+            );
+        }
+    }
 }

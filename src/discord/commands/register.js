@@ -1,21 +1,17 @@
 import querystring from "querystring";
-
-let server_url =
-    process.env["SYNCIFY_SERVER_BASE_URL"] != undefined
-        ? process.env["SYNCIFY_SERVER_BASE_URL"] + "/auth"
-        : "http://localhost:8888/auth";
+import { SERVER_URL } from "../../helpers/url_helper";
 
 module.exports = {
-    name: "join",
+    name: "register",
     description: "Join Spotify party!",
     execute(message, args) {
         const _greet = `Welcome to the Party! Grant Syncify access to your Spotify client here: \n`;
         const qParams = {
+            platform: "discord",
             client_id: message.guild.id,
             user_id: message.member.id,
         };
-        const accessURL = `> ${server_url}/?${querystring.stringify(qParams)}`;
-
+        const accessURL = `> ${SERVER_URL}/?${querystring.stringify(qParams)}`;
         message.reply(`${_greet}${accessURL}`);
     },
 };

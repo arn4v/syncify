@@ -2,8 +2,8 @@ import { SpotifyHelper } from "../../spotify/api_helper";
 import DataHelper from "../../data/data_helper";
 
 module.exports = {
-    name: "track",
-    description: "Get the details of the current track",
+    name: "pause",
+    description: "Resume playing track",
     async execute(message: any, args: any) {
         // const serverId: string = message.guild.id;
         const userId: string = message.member.id;
@@ -11,14 +11,15 @@ module.exports = {
             platformType: 1,
             discordUserId: userId,
         };
-        await SpotifyHelper.getTrackInfo(platformInfo)
-            .then((response: any) => {
-                message.channel.send(
-                    ` Current playing ${response.name} by ${response.artists}`
+
+        await SpotifyHelper.resumePausePlayback(2, platformInfo)
+            .then((successfull: boolean) => {
+                message.reply(
+                    successfull
+                        ? "> Paused playback"
+                        : "> Unable to pause playback"
                 );
             })
-            .catch((error: string) => {
-                console.log(`LOG: discord/commands/track.ts: ${error}`);
-            });
+            .catch((error: string) => message.reply(error));
     },
 };

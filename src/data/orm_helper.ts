@@ -19,12 +19,7 @@ export class ORMHelper {
      * @returns Promise
      */
     private static async databaseConnection() {
-        return await createConnection({
-            type: "sqlite",
-            database: path.resolve(__dirname, "syncify.sqlite"),
-            synchronize: true,
-            entities: [User, Session],
-        });
+        return await createConnection();
     }
 
     /**

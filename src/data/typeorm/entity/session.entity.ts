@@ -10,7 +10,7 @@ export class Session extends Base {
     @Column({ type: "int", nullable: false })
     platform: number;
 
-    @Column({type: "text", unique: true, nullable: false})
+    @Column({ type: "text", unique: true, nullable: false })
     platformGroupId: string;
 
     @Column({ type: "text", nullable: false })

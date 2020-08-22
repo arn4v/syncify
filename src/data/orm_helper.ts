@@ -39,17 +39,17 @@ export class ORMHelper {
         platformInfo: any
     ) {
         let connection = getConnection();
-        let type = platformInfo.type;
-        let userId =
-            type == 1
+        const platform = platformInfo.type;
+        const userId =
+            platform == 1
                 ? platformInfo.discordUserId
                 : platformInfo.telegramUserId;
         let addUser = async () => {
             let user: any = new User();
 
-            if ((type = 1)) {
+            if (platform == 1) {
                 user.discordUserId = userId;
-            } else if (type == 2) {
+            } else if (platform == 2) {
                 user.telegramUserId = userId;
             }
 
@@ -67,7 +67,7 @@ export class ORMHelper {
             .getRepository(User)
             .findOne({
                 where:
-                    type == 1
+                    platform == 1
                         ? { discordUserId: userId }
                         : { telegramUserId: userId },
             })
@@ -87,17 +87,22 @@ export class ORMHelper {
     }
 
     public static async doesUserExist(
-        type: string,
+        platform: number,
         userId: string
     ): Promise<boolean> {
         let connection: Connection = getConnection();
         // @ts-ignore
         let result: boolean | undefined = undefined;
-        connection
+
+        await connection
             .getRepository(User)
-            .findOne({ where: { discordUserId: userId } })
+            .findOne({
+                where:
+                    platform == 1
+                        ? { discordUserId: userId }
+                        : { telegramUserId: userId },
+            })
             .then((data?: object) => {
-                console.log(data);
                 if (data == undefined) {
                     result = false;
                 } else {
@@ -109,17 +114,18 @@ export class ORMHelper {
         return result;
     }
 
-    public static async fetchSpotifyTokens(platformInfo: any): Promise<any> {
-        let type = platformInfo.type;
-        let userId =
+    public static async fetchSpotifyTokens(platformInfo: any) {
+        const type = platformInfo.type;
+        const userId =
             type == 1
                 ? platformInfo.discordUserId
                 : platformInfo.telegramUserId;
-        let connection: any = getConnection();
+        let connection: Connection = getConnection();
         let spotifyInfo = {
             spotifyAccessToken: undefined,
             spotifyRefreshToken: undefined,
         };
+
         await connection
             .getRepository(User)
             .findOne({
@@ -128,14 +134,9 @@ export class ORMHelper {
                         ? { discordUserId: userId }
                         : { telegramUserId: userId },
             })
-            .then((data?: object) => {
-                // TODO: Find a way to not use ts-ignore and still be
-                // able access the object
-                // @ts-ignore
-                spotifyInfo.spotifyAccessToken = data.spotifyAccessToken;
-                // @ts-ignore
-                spotifyInfo.spotifyRefreshToken = data.spotifyRefreshToken;
-                console.log(spotifyInfo);
+            .then((user: any) => {
+                spotifyInfo.spotifyAccessToken = user.spotifyAccessToken;
+                spotifyInfo.spotifyRefreshToken = user.spotifyRefreshToken;
             })
             .catch((error: string) => {
                 console.log(`LOG: ORMHelper -> fetchSpotifyTokens: ${error}`);
@@ -144,27 +145,27 @@ export class ORMHelper {
     }
 
     public static async updateSpotifyTokens(
-        accessToken: string,
+        newAccessToken: string,
         platformInfo: any
     ) {
-        let discordUserId: string | undefined =
-            platformInfo.discordUserId || undefined;
-        let telegramUserId: string | undefined =
-            platformInfo.telegramUserId || undefined;
+        const platform: number = platformInfo.type;
+        const userId: string =
+            platform == 1
+                ? platformInfo.discordUserId
+                : platformInfo.telegramUserId;
         let connection = getConnection();
-        connection
+
+        await connection
             .getRepository(User)
             .findOne({
                 where:
-                    platformInfo.platformType == 1
-                        ? { discordUserId: discordUserId }
-                        : { telegramUserId: telegramUserId },
+                    platform == 1
+                        ? { discordUserId: userId }
+                        : { telegramUserId: userId },
             })
-            .then(async (user?: object) => {
-                // @ts-ignore
-                user?.spotifyAccessToken = accessToken;
-
-                await connection.manager.save(user).then((user?: object) => {
+            .then(async (user: any) => {
+                user.spotifyAccessToken = newAccessToken;
+                await connection.manager.save(user).then((user?: any) => {
                     console.log(
                         // @ts-ignore
                         `LOG: ORMHelper: updateSpotifyTokens: successfully updated access token for user ${user?.syncifyUserId}`
@@ -176,20 +177,27 @@ export class ORMHelper {
     public static async createSession(platformInfo: any) {
         let connection = getConnection();
         var res;
+        let type: number = platformInfo.type;
+        let userId: string =
+            type == 1
+                ? platformInfo.discordUserId
+                : platformInfo.telegramUserId;
         let createSession = async () => {
             let session = new Session();
-            session.platform = platformInfo.type;
+            session.platform = type;
             session.platformGroupId =
-                platformInfo.type == 1
+                type == 1
                     ? platformInfo.discordServerId
                     : platformInfo.telegramGroupId;
-            session.createdBy = platformInfo.userId;
+            session.createdBy = userId;
             session.members = JSON.stringify({
-                members: [platformInfo.userId],
+                members: [userId],
             });
 
             let sessionId;
 
+            // ALWAYS USE AWAIT WITH WHEN CONNECTION IS BEING FETCHED USING
+            // getConnection()
             await connection.manager
                 .save(session)
                 .then(async () => {
@@ -254,6 +262,7 @@ export class ORMHelper {
                 ? platformInfo.discordServerId
                 : platformInfo.telegramGroupId;
         let message: string;
+
         await connection
             .getRepository(Session)
             .findOne({

@@ -1,5 +1,4 @@
 import axios from "axios";
-import { ORMHelper } from "../data/orm_helper";
 import DataHelper from "../data/data_helper";
 import qs from "qs";
 
@@ -7,12 +6,9 @@ export class SpotifyHelper {
     private static baseUrl: string = "https://api.spotify.com/v1";
 
     private static async refreshAccessToken(refresh_token: any) {
-        const postData = {
-            grant_type: "refresh_token",
-            refresh_token: refresh_token,
-        };
         let newAccessToken: string;
         await axios({
+            method: "post",
             url: "https://accounts.spotify.com/api/token",
             headers: {
                 Authorization:
@@ -24,10 +20,16 @@ export class SpotifyHelper {
                     ).toString("base64"),
                 "content-type": "application/x-www-form-urlencoded",
             },
-            params: qs.stringify(postData),
+            params: qs.stringify({
+                grant_type: "refresh_token",
+                refresh_token: refresh_token,
+            }),
+            data: qs.stringify({
+                grant_type: "refresh_token",
+                refresh_token: refresh_token,
+            }),
         })
             .then(async (response) => {
-                console.log("idhar aaya", response);
                 if (response.status == 200) {
                     newAccessToken = response.data["access_token"];
                 }
@@ -68,12 +70,11 @@ export class SpotifyHelper {
             return request_type == 1 ? req_url + "play" : req_url + "pause";
         };
         let done: boolean;
+        let new_access_token: string;
 
         await DataHelper.fetchSpotifyTokens(platformInfo)
             .then(async (spotifyInfo: any) => {
-                console.log("?", spotifyInfo);
                 let access_token: string = spotifyInfo.spotifyAccessToken;
-                let new_access_token: string;
                 await axios({
                     url: request_url(),
                     method: "put",
@@ -183,6 +184,7 @@ export class SpotifyHelper {
                                 // @ts-ignore
                                 .map((e) => e.name)
                                 .join(", ");
+                            // TODO: Handle other status codes
                         } else if (response.status == 204) {
                         }
                     })
@@ -203,7 +205,6 @@ export class SpotifyHelper {
                                         headers: authorization_header(true),
                                     })
                                     .then((res) => {
-                                        console.log("GOT IT" + res);
                                         // @ts-ignore
                                         songInfo.name = res.data.item.name;
                                         // @ts-ignore

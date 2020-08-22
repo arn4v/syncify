@@ -6,7 +6,6 @@ module.exports = {
     async execute(message: any, args: any) {
         // const serverId: string = message.guild.id;
         const userId: string = message.member.id;
-        console.log(userId);
         const platformInfo: any = {
             type: 1,
             discordUserId: userId,
@@ -14,11 +13,9 @@ module.exports = {
 
         await SpotifyHelper.resumePausePlayback(1, platformInfo)
             .then(async (successfull: boolean) => {
-                console.log(successfull);
                 if (successfull) {
                     await SpotifyHelper.getTrackInfo(platformInfo)
                         .then((response: any) => {
-                            console.log(response);
                             message.channel.send(
                                 `> Resumed playing: ${response.name} by ${response.artists}`
                             );

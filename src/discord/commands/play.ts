@@ -7,8 +7,9 @@ module.exports = {
     async execute(message: any, args: any) {
         // const serverId: string = message.guild.id;
         const userId: string = message.member.id;
+        console.log(userId);
         const platformInfo: any = {
-            platformType: 1,
+            type: 1,
             discordUserId: userId,
         };
 

@@ -101,7 +101,7 @@ router.get("/callback", function (req: any, res: any) {
 
                 if (discordUserID) {
                     DataHelper.addUser(access_token, refresh_token, {
-                        platformType: 1,
+                        type: 1,
                         discordUserId: discordUserID,
                     });
                 }

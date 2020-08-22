@@ -1,5 +1,4 @@
 import DataHelper from "../../data/data_helper";
-import { ORMHelper } from "../../data/orm_helper";
 
 module.exports = {
     name: "createsession",
@@ -11,7 +10,7 @@ module.exports = {
             userId: message.member.id,
         };
 
-        await ORMHelper.createSession(platformInfo)
+        await DataHelper.createSession(platformInfo)
             .then((res) => {
                 message.reply(res).catch(console.error);
             })

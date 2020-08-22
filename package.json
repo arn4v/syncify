@@ -1,15 +1,15 @@
 {
-    "name": "syncify-auth-ui",
+    "name": "syncify",
     "version": "1.0.0",
-    "description": "Syncify Server",
+    "description": "Syncify",
     "main": "src/app.js",
     "scripts": {
-        "build": "tsc",
-        "build:dev": "tsc -w",
+        "build": "npm run clean && env NODE_ENV=production webpack --config webpack.config.js",
+        "build:dev": "npm run clean && env NODE_ENV=development webpack --config webpack.config.js --mode development --watch",
         "clean": "rm -rf ./build",
         "format": "prettier --write \"./src/**/*.{js,ts,json}\"",
-        "start": "ts-node src/index.ts",
-        "start:dev": "nodemon build/app.js"
+        "start": "npm run build && env NODE_ENV=production  node build/app.js",
+        "start:dev": "env NODE_ENV=development nodemon build/app.js"
     },
     "author": "",
     "contributors": [
@@ -33,6 +33,11 @@
         "typeorm": "0.2.25"
     },
     "devDependencies": {
+        "@babel/cli": "^7.10.5",
+        "@babel/core": "^7.11.4",
+        "@babel/plugin-proposal-class-properties": "^7.10.4",
+        "@babel/preset-env": "^7.11.0",
+        "@babel/preset-typescript": "^7.10.4",
         "@types/cookie-parser": "^1.4.2",
         "@types/cors": "^2.8.7",
         "@types/node": "14.6.0",
@@ -40,12 +45,14 @@
         "@types/request": "^2.48.5",
         "@types/sqlite3": "^3.1.6",
         "@types/ws": "^7.2.6",
-        "lodash": "^4.17.20",
+        "babel-loader": "^8.1.0",
         "nodemon": "^2.0.4",
         "prettier": "^2.0.5",
-        "save": "^2.4.0",
-        "ts-node": "^3.3.0",
-        "typescript": "3.9.7"
+        "ts-loader": "^8.0.2",
+        "typescript": "3.9.7",
+        "webpack": "^4.44.1",
+        "webpack-cli": "^3.3.12",
+        "webpack-node-externals": "^2.5.1"
     },
     "prettier": {
         "printWidth": 80,

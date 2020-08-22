@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ORMHelper } from "../data/orm_helper";
 import DataHelper from "../data/data_helper";
 import qs from "qs";
 
@@ -11,24 +12,22 @@ export class SpotifyHelper {
             refresh_token: refresh_token,
         };
         let newAccessToken: string;
-        await axios
-            .post(
-                "https://accounts.spotify.com/api/token",
-                qs.stringify(postData),
-                {
-                    headers: {
-                        Authorization:
-                            "Basic " +
-                            Buffer.from(
-                                process.env.SPOTIFY_CLIENT_ID +
-                                    ":" +
-                                    process.env.SPOTIFY_CLIENT_SECRET
-                            ).toString("base64"),
-                        "content-type": "application/x-www-form-urlencoded",
-                    },
-                }
-            )
+        await axios({
+            url: "https://accounts.spotify.com/api/token",
+            headers: {
+                Authorization:
+                    "Basic " +
+                    Buffer.from(
+                        process.env.SPOTIFY_CLIENT_ID +
+                            ":" +
+                            process.env.SPOTIFY_CLIENT_SECRET
+                    ).toString("base64"),
+                "content-type": "application/x-www-form-urlencoded",
+            },
+            params: qs.stringify(postData),
+        })
             .then(async (response) => {
+                console.log("idhar aaya", response);
                 if (response.status == 200) {
                     newAccessToken = response.data["access_token"];
                 }
@@ -52,8 +51,9 @@ export class SpotifyHelper {
         };
         let done: boolean;
 
-        await DataHelper.fetchSpotifyTokens(platformInfo)
+        await ORMHelper.fetchSpotifyTokens(platformInfo)
             .then(async (spotifyInfo: any) => {
+                console.log("?", spotifyInfo);
                 let access_token: string = spotifyInfo.spotifyAccessToken;
                 let new_access_token: string;
                 await axios({
@@ -120,10 +120,11 @@ export class SpotifyHelper {
             artists: undefined,
         };
 
-        await DataHelper.fetchSpotifyTokens(platformInfo)
+        await ORMHelper.fetchSpotifyTokens(platformInfo)
             .then(async (spotifyInfo: any) => {
-                let spotifyAccessToken: string = spotifyInfo.spotifyAccessToken;
-                let spotifyRefreshToken: string =
+                const spotifyAccessToken: string =
+                    spotifyInfo.spotifyAccessToken;
+                const spotifyRefreshToken: string =
                     spotifyInfo.spotifyRefreshToken;
                 const authorization_header = (isRefreshed: boolean) => {
                     let token: string = isRefreshed
@@ -134,10 +135,11 @@ export class SpotifyHelper {
                     };
                 };
 
-                await axios
-                    .get(request_url, {
-                        headers: authorization_header(false),
-                    })
+                await axios({
+                    method: "get",
+                    url: request_url,
+                    headers: authorization_header(false),
+                })
                     .then(async (response) => {
                         // @ts-ignore
                         if (response.status == 401) {

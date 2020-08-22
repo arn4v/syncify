@@ -1,16 +1,10 @@
-import { createConnection, getConnection, Connection } from "typeorm";
-import { User } from "./typeorm/entity/user.entity";
+import path from "path";
 import { Session } from "./typeorm/entity/session.entity";
+import { User } from "./typeorm/entity/user.entity";
+import { createConnection, getConnection, Connection } from "typeorm";
 
 export class ORMHelper {
     private static _connection: any;
-    private _instance: ORMHelper;
-
-    constructor() {
-        if (this._instance != null) return this._instance;
-        this._instance = this;
-        return this._instance;
-    }
 
     /**
      * @returns Promise
@@ -25,7 +19,12 @@ export class ORMHelper {
      * @returns Promise
      */
     private static async databaseConnection() {
-        return await createConnection();
+        return await createConnection({
+            type: "sqlite",
+            database: path.resolve(__dirname, "syncify.sqlite"),
+            synchronize: true,
+            entities: [User, Session],
+        });
     }
 
     /**
@@ -40,18 +39,18 @@ export class ORMHelper {
         platformInfo: any
     ) {
         let connection = getConnection();
-        let discordUserId: string | undefined =
-            platformInfo.discordUserId || undefined;
-        let telegramUserId: string | undefined =
-            platformInfo.telegramUserId || undefined;
+        let type = platformInfo.type;
+        let userId =
+            type == 1
+                ? platformInfo.discordUserId
+                : platformInfo.telegramUserId;
         let addUser = async () => {
             let user: any = new User();
-            let platform: number = platformInfo.platformType;
 
-            if ((platform = 1)) {
-                user.discordUserId = discordUserId;
-            } else if (platform == 2) {
-                user.telegramUserId = telegramUserId;
+            if ((type = 1)) {
+                user.discordUserId = userId;
+            } else if (type == 2) {
+                user.telegramUserId = userId;
             }
 
             user.spotifyAccessToken = spotifyAccessToken;
@@ -66,14 +65,19 @@ export class ORMHelper {
 
         connection
             .getRepository(User)
-            .findOne({ where: { discordUserId: discordUserId } })
+            .findOne({
+                where:
+                    type == 1
+                        ? { discordUserId: userId }
+                        : { telegramUserId: userId },
+            })
             // @ts-expect-error
             .then((data: object) => {
                 if (data == undefined) {
                     addUser();
                 } else {
                     console.log(
-                        `LOG: OrmHelper: addUser: User ${discordUserId} already exists...`
+                        `LOG: OrmHelper: addUser: User ${userId} already exists...`
                     );
                 }
             })
@@ -105,11 +109,12 @@ export class ORMHelper {
         return result;
     }
 
-    public static async fetchSpotifyTokens(platformInfo: any) {
-        let discordUserId: string | undefined =
-            platformInfo.discordUserId || undefined;
-        let telegramUserId: string | undefined =
-            platformInfo.telegramUserId || undefined;
+    public static async fetchSpotifyTokens(platformInfo: any): Promise<any> {
+        let type = platformInfo.type;
+        let userId =
+            type == 1
+                ? platformInfo.discordUserId
+                : platformInfo.telegramUserId;
         let connection: any = getConnection();
         let spotifyInfo = {
             spotifyAccessToken: undefined,
@@ -119,9 +124,9 @@ export class ORMHelper {
             .getRepository(User)
             .findOne({
                 where:
-                    platformInfo.platformType == 1
-                        ? { discordUserId: discordUserId }
-                        : { telegramUserId: telegramUserId },
+                    type == 1
+                        ? { discordUserId: userId }
+                        : { telegramUserId: userId },
             })
             .then((data: object) => {
                 // TODO: Find a way to not use ts-ignore and still be
@@ -134,6 +139,7 @@ export class ORMHelper {
             .catch((error: string) => {
                 console.log(`LOG: ORMHelper -> fetchSpotifyTokens: ${error}`);
             });
+        console.log(spotifyInfo);
         return spotifyInfo;
     }
 

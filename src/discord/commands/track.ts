@@ -8,7 +8,7 @@ module.exports = {
         // const serverId: string = message.guild.id;
         const userId: string = message.member.id;
         const platformInfo: any = {
-            platformType: 1,
+            type: 1,
             discordUserId: userId,
         };
         await SpotifyHelper.getTrackInfo(platformInfo)

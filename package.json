@@ -4,8 +4,8 @@
     "description": "Syncify",
     "main": "src/app.js",
     "scripts": {
-        "build": "npm run clean && env NODE_ENV=production webpack --config webpack.config.js",
-        "build:dev": "npm run clean && env NODE_ENV=development webpack --config webpack.config.js --mode development --watch",
+        "build": "npm run clean && env NODE_ENV=production tsc",
+        "build:dev": "npm run clean && env NODE_ENV=development tsc -w",
         "clean": "rm -rf ./build",
         "format": "prettier --write \"./src/**/*.{js,ts,json}\"",
         "start": "npm run build && env NODE_ENV=production  node build/app.js",

@@ -33,7 +33,7 @@ export class ORMHelper {
      * @param  {any} platformInfo
      * @returns any
      */
-    public static addUser(
+    public static async addUser(
         spotifyAccessToken: string,
         spotifyRefreshToken: string,
         platformInfo: any
@@ -63,7 +63,7 @@ export class ORMHelper {
             });
         };
 
-        connection
+        await connection
             .getRepository(User)
             .findOne({
                 where:
@@ -96,7 +96,7 @@ export class ORMHelper {
         connection
             .getRepository(User)
             .findOne({ where: { discordUserId: userId } })
-            .then((data) => {
+            .then((data?: object) => {
                 console.log(data);
                 if (data == undefined) {
                     result = false;
@@ -120,7 +120,7 @@ export class ORMHelper {
             spotifyAccessToken: undefined,
             spotifyRefreshToken: undefined,
         };
-        connection
+        await connection
             .getRepository(User)
             .findOne({
                 where:
@@ -128,18 +128,18 @@ export class ORMHelper {
                         ? { discordUserId: userId }
                         : { telegramUserId: userId },
             })
-            .then((data: object) => {
+            .then((data?: object) => {
                 // TODO: Find a way to not use ts-ignore and still be
                 // able access the object
                 // @ts-ignore
                 spotifyInfo.spotifyAccessToken = data.spotifyAccessToken;
                 // @ts-ignore
                 spotifyInfo.spotifyRefreshToken = data.spotifyRefreshToken;
+                console.log(spotifyInfo);
             })
             .catch((error: string) => {
                 console.log(`LOG: ORMHelper -> fetchSpotifyTokens: ${error}`);
             });
-        console.log(spotifyInfo);
         return spotifyInfo;
     }
 
@@ -160,12 +160,13 @@ export class ORMHelper {
                         ? { discordUserId: discordUserId }
                         : { telegramUserId: telegramUserId },
             })
-            .then(async (user) => {
+            .then(async (user?: object) => {
                 // @ts-ignore
-                user.spotifyAccessToken = accessToken;
+                user?.spotifyAccessToken = accessToken;
 
-                await connection.manager.save(user).then((user) => {
+                await connection.manager.save(user).then((user?: object) => {
                     console.log(
+                        // @ts-ignore
                         `LOG: ORMHelper: updateSpotifyTokens: successfully updated access token for user ${user?.syncifyUserId}`
                     );
                 });
@@ -191,18 +192,18 @@ export class ORMHelper {
 
             await connection.manager
                 .save(session)
-                .then((session) => {
+                .then(async () => {
                     res = "Created session";
                     sessionId = session.sessionId;
                     console.log(`Creating session ${sessionId}`);
                 })
-                .catch((error) => {
+                .catch((error: object) => {
                     res = "Error creating message session";
                     console.log("ERROR: ORMHelper.createsession: ", error);
                 });
         };
 
-        connection
+        await connection
             .getRepository(Session)
             .findOne({
                 where: {
@@ -212,7 +213,7 @@ export class ORMHelper {
                             : platformInfo.telegramGroupId,
                 },
             })
-            .then(async (data) => {
+            .then(async (data?: object) => {
                 if (data == undefined) {
                     await createSession()
                         .then((sessionId) => {
@@ -233,7 +234,7 @@ export class ORMHelper {
                     );
                 }
             })
-            .catch((error) => {
+            .catch((error: object) => {
                 console.log("ERROR: createSession: ", error);
                 res = "unable to create session";
                 // createSession();
@@ -253,14 +254,14 @@ export class ORMHelper {
                 ? platformInfo.discordServerId
                 : platformInfo.telegramGroupId;
         let message: string;
-        connection
+        await connection
             .getRepository(Session)
             .findOne({
                 where: {
                     platformGroupId: groupId,
                 },
             })
-            .then(async (session) => {
+            .then(async (session?: object) => {
                 await this.doesUserExist(platform, userId)
                     .then(async (res) => {
                         if (res) {
@@ -279,7 +280,7 @@ export class ORMHelper {
                                         userId +
                                         " to the session!";
                                 })
-                                .catch((error) =>
+                                .catch((error: object) =>
                                     console.log(
                                         `ERROR: joinSession: L263 unable to save sessions`,
                                         error
@@ -290,14 +291,14 @@ export class ORMHelper {
                                 "Please register first. Unable to find you in database";
                         }
                     })
-                    .catch((error) =>
+                    .catch((error: object) =>
                         console.log(
                             `ERROR: joinSession: doesUserExist Catch Block`,
                             error
                         )
                     );
             })
-            .catch((error) => {
+            .catch((error: object) => {
                 console.log(`ERROR: ORMHelper.joinSession: ${error}`);
             });
         // @ts-ignore

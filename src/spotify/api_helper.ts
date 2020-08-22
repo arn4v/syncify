@@ -41,6 +41,24 @@ export class SpotifyHelper {
         return newAccessToken;
     }
 
+    public static async getActiveDevices(platformInfo: object) {
+        let request_url = this.baseUrl + "/me/player/devices";
+        await DataHelper.fetchSpotifyTokens(platformInfo).then(
+            async (spotifyInfo: object) => {
+                await axios({
+                    method: "get",
+                    url: request_url,
+                    headers: {
+                        // @ts-ignore
+                        Authorization: `Bearer ${spotifyInfo.spotifyAccessToken}`,
+                    },
+                }).then((res: any) => {
+                    console.log(res.data);
+                });
+            }
+        );
+    }
+
     public static async resumePausePlayback(
         request_type: number,
         platformInfo: any
@@ -51,7 +69,7 @@ export class SpotifyHelper {
         };
         let done: boolean;
 
-        await ORMHelper.fetchSpotifyTokens(platformInfo)
+        await DataHelper.fetchSpotifyTokens(platformInfo)
             .then(async (spotifyInfo: any) => {
                 console.log("?", spotifyInfo);
                 let access_token: string = spotifyInfo.spotifyAccessToken;
@@ -120,7 +138,7 @@ export class SpotifyHelper {
             artists: undefined,
         };
 
-        await ORMHelper.fetchSpotifyTokens(platformInfo)
+        await DataHelper.fetchSpotifyTokens(platformInfo)
             .then(async (spotifyInfo: any) => {
                 const spotifyAccessToken: string =
                     spotifyInfo.spotifyAccessToken;

@@ -1,8 +1,7 @@
 import { SpotifyHelper } from "../../spotify/api_helper";
-import DataHelper from "../../data/data_helper";
 
 module.exports = {
-    name: "resume",
+    name: "play",
     description: "Resume playing track",
     async execute(message: any, args: any) {
         // const serverId: string = message.guild.id;

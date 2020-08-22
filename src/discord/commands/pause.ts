@@ -1,5 +1,4 @@
 import { SpotifyHelper } from "../../spotify/api_helper";
-import DataHelper from "../../data/data_helper";
 
 module.exports = {
     name: "pause",
@@ -8,7 +7,7 @@ module.exports = {
         // const serverId: string = message.guild.id;
         const userId: string = message.member.id;
         const platformInfo: any = {
-            platformType: 1,
+            type: 1,
             discordUserId: userId,
         };
 

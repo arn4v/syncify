@@ -33,11 +33,6 @@
         "typeorm": "0.2.25"
     },
     "devDependencies": {
-        "@babel/cli": "^7.10.5",
-        "@babel/core": "^7.11.4",
-        "@babel/plugin-proposal-class-properties": "^7.10.4",
-        "@babel/preset-env": "^7.11.0",
-        "@babel/preset-typescript": "^7.10.4",
         "@types/cookie-parser": "^1.4.2",
         "@types/cors": "^2.8.7",
         "@types/node": "14.6.0",
@@ -45,14 +40,9 @@
         "@types/request": "^2.48.5",
         "@types/sqlite3": "^3.1.6",
         "@types/ws": "^7.2.6",
-        "babel-loader": "^8.1.0",
         "nodemon": "^2.0.4",
         "prettier": "^2.0.5",
-        "ts-loader": "^8.0.2",
-        "typescript": "3.9.7",
-        "webpack": "^4.44.1",
-        "webpack-cli": "^3.3.12",
-        "webpack-node-externals": "^2.5.1"
+        "typescript": "3.9.7"
     },
     "prettier": {
         "printWidth": 80,

@@ -312,7 +312,10 @@ export class ORMHelper {
 
     public static async doesSessionExist(platformInfo: any): Promise<boolean> {
         let connection = getConnection();
-        let status: boolean;
+        let sessionInfo: any = {
+            status: undefined,
+            data: undefined,
+        };
         await connection
             .getRepository(Session)
             .findOne({
@@ -323,39 +326,18 @@ export class ORMHelper {
                             : platformInfo.telegramGroupId,
                 },
             })
-            .then(async (session) => {
+            .then((session) => {
                 if (typeof session != "undefined") {
-                    status = true;
+                    sessionInfo.status = 200;
+                    sessionInfo.data = session;
                 } else {
-                    status = false;
+                    sessionInfo.status = 400;
                 }
             })
             .catch((error) => {
-                if (error != null) status = false;
+                if (error != null) sessionInfo.status = false;
             });
         // @ts-ignore
         return status;
-    }
-
-    public static async getSessionInfo(platformInfo: any) {
-        let connection = getConnection();
-        let result;
-
-        await connection
-            .getRepository(Session)
-            .findOne({
-                where: {
-                    platformGroupId:
-                        platformInfo.type == 1
-                            ? platformInfo.discordServerId
-                            : platformInfo.telegramGroupId,
-                },
-            })
-            .then(async (session) => {
-                result = session;
-            })
-            .catch((error) => console.log(`ERROR: getSessionInfo: ${error}`));
-        // @ts-ignore
-        return result;
     }
 }

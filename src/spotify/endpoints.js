@@ -1,5 +1,16 @@
 export const endpoints = {
     base_url: { url: "https://api.spotify.com/v1" },
+    add_to_queue: {
+        url: "https://api.spotify.com/v1/me/player/queue",
+        method: "post",
+        params: [
+            {
+                name: "uri",
+                desc: "Add song to queue",
+                valid: "spotify:track:URI",
+            },
+        ],
+    },
     active_devices: {
         url: "https://api.spotify.com/v1/me/player/devices",
         method: "get",
@@ -33,5 +44,10 @@ export const endpoints = {
                 desc: "Position of the song in milliseconds",
             },
         ],
+    },
+    search: {
+        url: "https://api.spotify.com/v1/search",
+        method: "get",
+        params: [{ name: "q" }, { name: "type" }, { name: "limit" }],
     },
 };

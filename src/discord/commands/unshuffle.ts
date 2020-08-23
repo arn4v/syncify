@@ -1,22 +1,19 @@
 import { toggleShuffle } from "../../spotify/toggle_shuffle";
 
 module.exports = {
-    name: "shuffle",
+    name: "unshuffle",
     description: "Resume playing track",
     async execute(message: any, args: any) {
-        // const serverId: string = message.guild.id;
-        const userId: string = message.member.id;
-
         const platformInfo: any = {
             type: 1,
             discordUserId: message.member.id,
             discordServerId: message.guild.id,
         };
 
-        await toggleShuffle(platformInfo, true)
+        await toggleShuffle(platformInfo, false)
             .then(async (status?: boolean) => {
                 if (status) {
-                    message.reply(`Shuffled your queue`);
+                    message.reply(`Unshuffled your queue`);
                 } else {
                     message.reply(`Unable to shuffle queue`);
                 }

@@ -6,8 +6,8 @@ module.exports = {
     async execute(message: any, args: any) {
         const platformInfo = {
             type: 1,
+            discordUserId: message.member.id,
             discordServerId: message.guild.id,
-            userId: message.member.id,
         };
         await DataHelper.joinSession(platformInfo)
             .then((res) => {

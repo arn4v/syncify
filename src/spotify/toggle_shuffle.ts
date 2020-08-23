@@ -18,13 +18,13 @@ export async function toggleShuffle(
             headers: {
                 Authorization: `Bearer ${access_token}`,
             },
-            params: qs.stringify({ state: toggleState }),
+            params: { state: toggleState },
         })
             .then((res) => {
-                result = res;
+                result = { type: 0, returned: res };
             })
             .catch((error) => {
-                result = error;
+                result = { type: 1, returned: error };
                 console.log(`ERROR: toggleShuffle: ${error}`);
             });
         return result;
@@ -33,17 +33,23 @@ export async function toggleShuffle(
     await DataHelper.fetchSpotifyTokens(platformInfo).then(
         async (spotifyInfo) => {
             // @ts-ignore
-            await requestFunc(spotifyInfo.spotifyAccessToken).then(
-                async (res: any) => {
-                    if (res?.status == (200 || 201)) {
+            await requestFunc(spotifyInfo.spotifyAccessToken)
+                .then(async (res: any) => {
+                    let response =
+                        res.type == 0 ? res.returned : res.returned.response;
+                    if (response.status == (200 || 201 || 204)) {
                         status = true;
-                    } else if (res?.status == (400 || 401)) {
+                    } else if (response.status == (400 || 401)) {
                         await refreshAccessToken(
                             spotifyInfo.spotifyRefreshToken
                         ).then(async (new_access_token) => {
                             await requestFunc(new_access_token)
-                                .then(async (res: any) => {
-                                    if (res.status == (200 || 201)) {
+                                .then(async (_res: any) => {
+                                    let _response =
+                                        _res.type == 0
+                                            ? _res.returned
+                                            : _res.returned.response;
+                                    if (_response.status == (200 || 201)) {
                                         status = true;
                                     } else {
                                         status = false;
@@ -59,8 +65,12 @@ export async function toggleShuffle(
                     } else {
                         status = true;
                     }
-                }
-            );
+                })
+                .catch((error) =>
+                    console.log(
+                        `ERROR: toggleShuffle: Last catch block: ${error}`
+                    )
+                );
         }
     );
     return status;

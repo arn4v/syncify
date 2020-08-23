@@ -4,11 +4,11 @@ module.exports = {
     name: "pause",
     description: "Resume playing track",
     async execute(message: any, args: any) {
-        // const serverId: string = message.guild.id;
-        const userId: string = message.member.id;
+
         const platformInfo: any = {
             type: 1,
-            discordUserId: userId,
+            discordUserId: message.member.id,
+            discordServerId: message.guild.id,
         };
 
         await resumePausePlayback(2, platformInfo)

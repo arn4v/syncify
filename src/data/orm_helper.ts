@@ -110,9 +110,9 @@ export class ORMHelper {
     }
 
     public static async fetchSpotifyTokens(platformInfo: any) {
-        const type = platformInfo.type;
+        const platform = platformInfo.type;
         const userId =
-            type == 1
+            platform == 1
                 ? platformInfo.discordUserId
                 : platformInfo.telegramUserId;
         let connection: Connection = getConnection();
@@ -125,7 +125,7 @@ export class ORMHelper {
             .getRepository(User)
             .findOne({
                 where:
-                    type == 1
+                    platform == 1
                         ? { discordUserId: userId }
                         : { telegramUserId: userId },
             })
@@ -177,6 +177,7 @@ export class ORMHelper {
             type == 1
                 ? platformInfo.discordUserId
                 : platformInfo.telegramUserId;
+        let sessionId;
         let createSession = async () => {
             let session = new Session();
             session.platform = type;
@@ -185,9 +186,7 @@ export class ORMHelper {
                     ? platformInfo.discordServerId
                     : platformInfo.telegramGroupId;
             session.createdBy = userId;
-            session.members = JSON.stringify({
-                members: [userId],
-            });
+            session.members = JSON.stringify([userId]);
 
             let sessionId;
 
@@ -271,25 +270,27 @@ export class ORMHelper {
                         if (res) {
                             // @ts-expect-error
                             let members = JSON.parse(session.members);
-                            console.log(members);
-                            console.log(members.members);
-                            members.members = members.members.push(userId);
-                            // @ts-expect-error
-                            session.members = members;
-                            await connection.manager
-                                .save(session)
-                                .then(() => {
-                                    message =
-                                        "Successfully added " +
-                                        userId +
-                                        " to the session!";
-                                })
-                                .catch((error: object) =>
-                                    console.log(
-                                        `ERROR: joinSession: L263 unable to save sessions`,
-                                        error
-                                    )
-                                );
+                            if (!members.includes(userId)) {
+                                members.push(userId);
+                                // @ts-expect-error
+                                session.members = JSON.stringify(members);
+                                await connection.manager
+                                    .save(session)
+                                    .then(() => {
+                                        message =
+                                            "Successfully added " +
+                                            userId +
+                                            " to the session!";
+                                    })
+                                    .catch((error: object) =>
+                                        console.log(
+                                            `ERROR: joinSession: L263 unable to save sessions`,
+                                            error
+                                        )
+                                    );
+                            } else {
+                                message = `You are already a part of this session`;
+                            }
                         } else {
                             message =
                                 "Please register first. Unable to find you in database";
@@ -308,5 +309,53 @@ export class ORMHelper {
         // @ts-ignore
         return message;
     }
-    // public static registerGroup(platformInfo: any) {}
+
+    public static async doesSessionExist(platformInfo: any): Promise<boolean> {
+        let connection = getConnection();
+        let status: boolean;
+        await connection
+            .getRepository(Session)
+            .findOne({
+                where: {
+                    platformGroupId:
+                        platformInfo.type == 1
+                            ? platformInfo.discordServerId
+                            : platformInfo.telegramGroupId,
+                },
+            })
+            .then(async (session) => {
+                if (typeof session != "undefined") {
+                    status = true;
+                } else {
+                    status = false;
+                }
+            })
+            .catch((error) => {
+                if (error != null) status = false;
+            });
+        // @ts-ignore
+        return status;
+    }
+
+    public static async getSessionInfo(platformInfo: any) {
+        let connection = getConnection();
+        let result;
+
+        await connection
+            .getRepository(Session)
+            .findOne({
+                where: {
+                    platformGroupId:
+                        platformInfo.type == 1
+                            ? platformInfo.discordServerId
+                            : platformInfo.telegramGroupId,
+                },
+            })
+            .then(async (session) => {
+                result = session;
+            })
+            .catch((error) => console.log(`ERROR: getSessionInfo: ${error}`));
+        // @ts-ignore
+        return result;
+    }
 }

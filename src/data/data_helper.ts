@@ -44,4 +44,8 @@ export class DataHelper {
     public static joinSession(platformInfo: any) {
         return ORMHelper.joinSession(platformInfo);
     }
+
+    public static doesSessionExist(platformInfo: any) {
+        return ORMHelper.doesSessionExist(platformInfo);
+    }
 }

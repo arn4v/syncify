@@ -4,10 +4,10 @@ module.exports = {
     name: "track",
     description: "Get the details of the current track",
     async execute(message: any, args: any) {
-        const userId: string = message.member.id;
         const platformInfo: any = {
             type: 1,
-            discordUserId: userId,
+            discordUserId: message.member.id,
+            discordServerId: message.guild.id,
         };
         await getTrackInfo(platformInfo)
             .then((response: any) => {

@@ -10,12 +10,12 @@ export class User extends Base {
     @Column({ type: "text", unique: true })
     discordUserId: string;
 
-    @Column({ type: "text", length: 100, nullable: true, unique: true })
+    @Column({ type: "text", nullable: true, unique: true })
     telegramUserId: string;
 
     @Column({ type: "text" })
     spotifyAccessToken: string;
 
-    @Column({ type: "text", length: 100, unique: true })
+    @Column({ type: "text", unique: true })
     spotifyRefreshToken: string;
 }

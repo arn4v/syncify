@@ -1,0 +1,14 @@
+{
+    "type": "sqlite",
+    "database": "build/syncify.sqlite",
+    "synchronize": true,
+    "logging": false,
+    "entities": ["build/data/typeorm/entity/**/*.js"],
+    "migrations": ["build/data/typeorm/migration/**/*.js"],
+    "subscribers": ["build/data/typeorm/subscriber/**/*.js"],
+    "cli": {
+        "entitiesDir": "build/data/typeorm/entity",
+        "migrationsDir": "build/data/typeorm/migration",
+        "subscribersDir": "build/data/typeorm/subscriber"
+    }
+}

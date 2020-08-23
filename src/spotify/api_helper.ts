@@ -61,6 +61,68 @@ export class SpotifyHelper {
         );
     }
 
+    public static async toggleShuffle(
+        platformInfo: object,
+        toggleState: boolean
+    ) {
+        let request_url = this.baseUrl + "/me/player/shuffle";
+        let status: boolean = false;
+        let requestFunc = async (access_token: string) => {
+            let result = undefined;
+            await axios({
+                method: "put",
+                url: request_url,
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                },
+                params: qs.stringify({ state: toggleState }),
+            })
+                .then((res) => {
+                    result = res;
+                })
+                .catch((error) => {
+                    result = error;
+                    console.log(`ERROR: toggleShuffle: ${error}`);
+                });
+            return result;
+        };
+
+        await DataHelper.fetchSpotifyTokens(platformInfo).then(
+            async (spotifyInfo) => {
+                // @ts-ignore
+                await requestFunc(spotifyInfo.spotifyAccessToken).then(
+                    async (res: any) => {
+                        if (res?.status == (200 || 201)) {
+                            status = true;
+                        } else if (res?.status == (400 || 401)) {
+                            await this.refreshAccessToken(
+                                spotifyInfo.spotifyRefreshToken
+                            ).then(async (new_access_token) => {
+                                await requestFunc(new_access_token)
+                                    .then(async (res: any) => {
+                                        if (res.status == (200 || 201)) {
+                                            status = true;
+                                        } else {
+                                            status = false;
+                                        }
+                                    })
+                                    .catch((error) => {
+                                        status = false;
+                                        console.log(
+                                            `ERROR: toggleShuffle: requestFunc: Catch Block ${error}`
+                                        );
+                                    });
+                            });
+                        } else {
+                            status = true;
+                        }
+                    }
+                );
+            }
+        );
+        return status;
+    }
+
     public static async resumePausePlayback(
         request_type: number,
         platformInfo: any

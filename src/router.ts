@@ -1,5 +1,5 @@
-import DataHelper from "./data/data_helper";
-import querystring from "querystring";
+import { DataHelper } from "./data/data_helper";
+import qs from "qs";
 import request from "request";
 import { Router } from "@feathersjs/express";
 
@@ -58,9 +58,7 @@ router.get("/auth", function (req: any, res: any) {
     };
 
     res.redirect(
-        `https://accounts.spotify.com/authorize?${querystring.stringify(
-            authQParams
-        )}`
+        `https://accounts.spotify.com/authorize?${qs.stringify(authQParams)}`
     );
 });
 
@@ -70,7 +68,7 @@ router.get("/callback", function (req: any, res: any) {
     let storedState: any = req.cookies ? req.cookies[stateKey] : null;
 
     if (state === null || state !== storedState) {
-        res.redirect("/#" + querystring.stringify({ error: "state_mismatch" }));
+        res.redirect("/#" + qs.stringify({ error: "state_mismatch" }));
     } else {
         res.clearCookie(stateKey);
         let redirect_uri: string =
@@ -107,11 +105,11 @@ router.get("/callback", function (req: any, res: any) {
                 }
                 res.redirect(
                     "/#" +
-                        querystring.stringify({ access_token, refresh_token })
+                        qs.stringify({ access_token, refresh_token })
                 );
             } else {
                 res.redirect(
-                    "/#" + querystring.stringify({ error: "invalid_token" })
+                    "/#" + qs.stringify({ error: "invalid_token" })
                 );
             }
         });

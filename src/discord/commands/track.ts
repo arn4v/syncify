@@ -1,17 +1,15 @@
-import { SpotifyHelper } from "../../spotify/api_helper";
-import DataHelper from "../../data/data_helper";
+import { getTrackInfo } from "../../spotify/track_info";
 
 module.exports = {
     name: "track",
     description: "Get the details of the current track",
     async execute(message: any, args: any) {
-        // const serverId: string = message.guild.id;
         const userId: string = message.member.id;
         const platformInfo: any = {
             type: 1,
             discordUserId: userId,
         };
-        await SpotifyHelper.getTrackInfo(platformInfo)
+        await getTrackInfo(platformInfo)
             .then((response: any) => {
                 message.channel.send(
                     ` Current playing ${response.name} by ${response.artists}`

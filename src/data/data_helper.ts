@@ -6,7 +6,7 @@ import { ORMHelper } from "./orm_helper";
 // Etc
 // TODO: Add functions for more databases in separate files
 
-export default class DataHelper {
+export class DataHelper {
     constructor() {}
 
     /**

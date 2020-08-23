@@ -1,4 +1,4 @@
-import { SpotifyHelper } from "../../spotify/api_helper";
+import { toggleShuffle } from "../../spotify/toggle_shuffle";
 
 module.exports = {
     name: "shuffle",
@@ -11,7 +11,7 @@ module.exports = {
             discordUserId: userId,
         };
 
-        await SpotifyHelper.toggleShuffle(platformInfo, true)
+        await toggleShuffle(platformInfo, true)
             .then(async (status?: boolean) => {
                 if (status) {
                     message.reply(`Shuffled your queue`);

@@ -1,4 +1,5 @@
-import { SpotifyHelper } from "../../spotify/api_helper";
+import { resumePausePlayback } from "../../spotify/toggle_playback";
+import { getTrackInfo } from "../../spotify/track_info";
 
 module.exports = {
     name: "play",
@@ -11,10 +12,10 @@ module.exports = {
             discordUserId: userId,
         };
 
-        await SpotifyHelper.resumePausePlayback(1, platformInfo)
+        await resumePausePlayback(1, platformInfo)
             .then(async (successfull: boolean) => {
                 if (successfull) {
-                    await SpotifyHelper.getTrackInfo(platformInfo)
+                    await getTrackInfo(platformInfo)
                         .then((response: any) => {
                             message.channel.send(
                                 `> Resumed playing: ${response.name} by ${response.artists}`

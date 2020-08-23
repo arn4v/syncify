@@ -1,4 +1,4 @@
-import DataHelper from "../../data/data_helper";
+import { DataHelper } from "../../data/data_helper";
 
 module.exports = {
     name: "createsession",

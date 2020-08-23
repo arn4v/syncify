@@ -1,4 +1,4 @@
-import { SpotifyHelper } from "../../spotify/api_helper";
+import { resumePausePlayback } from "../../spotify/toggle_playback";
 
 module.exports = {
     name: "pause",
@@ -11,7 +11,7 @@ module.exports = {
             discordUserId: userId,
         };
 
-        await SpotifyHelper.resumePausePlayback(2, platformInfo)
+        await resumePausePlayback(2, platformInfo)
             .then((successfull: boolean) => {
                 message.reply(
                     successfull

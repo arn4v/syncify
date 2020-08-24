@@ -354,21 +354,23 @@ export class ORMHelper {
         let status: any = {
             done: undefined,
             message: undefined,
+            queue: undefined,
         };
 
-        if (trackUri.length < 22) {
+        if (trackUri.length <= 36) {
             await connection
                 .getRepository(Session)
                 .findOne({ where: { platformGroupId: groupId } })
                 .then(async (session: any) => {
-                    session.queue = JSON.stringify(
-                        JSON.parse(session.queue).push(trackUri)
-                    );
+                    let queue = JSON.parse(session.queue);
+                    queue.push(trackUri);
+                    session.queue = JSON.stringify(queue);
                     await connection.manager
                         .save(session)
-                        .then(() => {
+                        .then((session: any) => {
                             status.done = true;
                             status.message = "Added song to queue";
+                            status.queue = session.queue;
                         })
                         .catch((error) => {
                             console.log(

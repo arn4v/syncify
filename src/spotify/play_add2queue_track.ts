@@ -1,12 +1,10 @@
 import axios from "axios";
-
 import { DataHelper } from "../data/data_helper";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
 import { trackLinkValidator } from "../helpers/spotify_link_validator";
 
-export async function addToQueue(platformInfo: any, songLink: string) {
-    const request_url: string = endpoints.add_to_queue.url;
+export async function playOrAddToQueue(platformInfo: any, songLink: string) {
     let status: any = {
         done: undefined,
         message: undefined,
@@ -15,6 +13,8 @@ export async function addToQueue(platformInfo: any, songLink: string) {
 
     let playFunc = async (platInfo: any, trackUri: string) => {
         let _done: boolean;
+        console.log(`Immediately playing song`);
+        const request_url: string = endpoints.play_track.url;
         await DataHelper.fetchSpotifyTokens(platInfo)
             .then(async (spotifyInfo: any) => {
                 let access_token: string = spotifyInfo.spotifyAccessToken;
@@ -79,6 +79,8 @@ export async function addToQueue(platformInfo: any, songLink: string) {
 
     let addToQueueFunc = async (platInfo: any, trackUri: string) => {
         let _done: boolean;
+        const request_url: string = endpoints.add_to_queue.url;
+        console.log("Adding song to queue");
         await DataHelper.fetchSpotifyTokens(platInfo)
             .then(async (spotifyInfo: any) => {
                 let access_token: string = spotifyInfo.spotifyAccessToken;
@@ -142,80 +144,83 @@ export async function addToQueue(platformInfo: any, songLink: string) {
     };
 
     const isValid: any = trackLinkValidator(songLink);
-    await DataHelper.doesSessionExist(platformInfo).then(async (res: any) => {
-        if (isValid.valid == true) {
-            if (res.status == 200) {
-                let sessionQueue: string[] = JSON.parse(res.data.queue);
-                let members: string[] = JSON.parse(res.data.members);
-                try {
-                    for (const member of members) {
-                        let platInfo = platformInfo;
-                        platInfo.type == 1
-                            ? (platInfo.discordUserId = member)
-                            : (platInfo.telegramUserId = member);
-                        if (sessionQueue.length == 0) {
-                            await playFunc(platInfo, isValid.link)
-                                .then((_res) => {
-                                    status.done = _res;
-                                    status.message =
-                                        "Playing song for the session";
-                                })
-                                .catch((error) => {
-                                    console.log(error);
-                                    status.done = false;
-                                    status.message =
-                                        "Unable to play song for the session";
-                                });
-                        } else {
-                            await addToQueueFunc(platInfo, isValid.link)
-                                .then((_res) => {
-                                    status.done = _res;
-                                    status.message =
-                                        "Added song to queue for the session";
-                                })
-                                .catch((error) => {
-                                    status.done = false;
-                                    status.message =
-                                        "Unable to add song to queue for the session";
-                                });
+    await DataHelper.doesSessionExist(platformInfo)
+        .then(async (res: any) => {
+            if (isValid.valid == true) {
+                console.log("URL is valid");
+                if (res.status == 200) {
+                    let sessionQueue: string[] = JSON.parse(res.data.queue);
+                    let members: string[] = JSON.parse(res.data.members);
+                    try {
+                        for (const member of members) {
+                            let platInfo = platformInfo;
+                            platInfo.type == 1
+                                ? (platInfo.discordUserId = member)
+                                : (platInfo.telegramUserId = member);
+                            if (sessionQueue.length == 0) {
+                                await playFunc(platInfo, isValid.link)
+                                    .then((_res) => {
+                                        status.done = _res;
+                                        status.message =
+                                            "Playing song for the session";
+                                    })
+                                    .catch((error) => {
+                                        console.log(error);
+                                        status.done = false;
+                                        status.message =
+                                            "Unable to play song for the session";
+                                    });
+                            } else {
+                                await addToQueueFunc(platInfo, isValid.link)
+                                    .then((_res) => {
+                                        status.done = _res;
+                                        status.message =
+                                            "Added song to queue for the session";
+                                    })
+                                    .catch((error) => {
+                                        console.log("ERROR", error);
+                                        status.done = false;
+                                        status.message =
+                                            "Unable to add song to queue for the session";
+                                    });
+                            }
                         }
                         await DataHelper.addToSessionQueue(
-                            platInfo,
+                            platformInfo,
                             isValid.link
-                        ).catch((error: string) =>
-                            console.log("ERROR: addToSessionQueue: " + error)
-                        );
+                        )
+                            .then((status) => {
+                                console.log(status);
+                                if (status.done) {
+                                    console.log("New queue: " + status.queue);
+                                }
+                            })
+                            .catch((error: string) =>
+                                console.log(
+                                    "ERROR: addToSessionQueue: " + error
+                                )
+                            );
+                    } catch (err) {
+                        if (err) {
+                            status.done = false;
+                            status.message = "Unable to play requested track";
+                        }
                     }
-                    status.done = true;
-                    status.message = "Playing requested track";
-                } catch (err) {
-                    if (err) {
-                        status.done = false;
-                        status.message = "Unable to play requested track";
-                    }
+                } else {
+                    status.done = false;
+                    status.message = "Please start a session first.";
                 }
-                // } else {
-                //     await requestFunc(platformInfo)
-                //         .then((_res: any) => {
-                //             if (_res == true) {
-                //                 status.done = true;
-                //                 status.message = "Playing requested track";
-                //             } else {
-                //                 status.done = false;
-                //                 status.message =
-                //                     "Unable to play requested track";
-                //             }
-                //         })
-                //         .catch((error) => {
-                //             console.log(error);
-                //             status.done = false;
-                //             status.message = "Unable to play requested track";
-                //         });
-                // }
+            } else {
+                console.log("URL is not valid");
+                status.done = false;
+                status.message = "Please send a valid URL";
             }
-        } else {
+        })
+        .catch((error) => {
+            console.log(error);
             status.done = false;
             status.message = "Please start a session first.";
-        }
-    });
+        });
+    // @ts-ignore
+    return status;
 }

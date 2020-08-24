@@ -1,5 +1,4 @@
-import { playTrack } from "../../../spotify/play";
-import { getTrackInfo } from "../../../spotify/track_info";
+import { playOrAddToQueue } from "../../../spotify/play_add2queue_track";
 
 module.exports = {
     name: "play",
@@ -11,25 +10,9 @@ module.exports = {
             discordServerId: message.guild.id,
         };
         if (typeof args != "undefined" && args.length >= 1) {
-            await playTrack(platformInfo, args[0])
+            await playOrAddToQueue(platformInfo, args[0])
                 .then(async (status: any) => {
-                    if (status.done) {
-                        await getTrackInfo(platformInfo)
-                            .then((response: any) => {
-                                message.channel.send(
-                                    `> Resumed playing: ${response.name} by ${response.artists}`
-                                );
-                            })
-                            .catch((error: string) => {
-                                console.log(
-                                    `LOG: discord/commands/track.ts: ${error}`
-                                );
-                            });
-                    } else {
-                        message.channel.send(
-                            `> Spotify cannot find active devices.`
-                        );
-                    }
+                    message.reply(status.message);
                 })
                 .catch((error: string) => message.reply(error));
         } else {

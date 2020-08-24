@@ -6,8 +6,7 @@ export function trackLinkValidator(link: string) {
     };
 
     if (link.includes("spotify")) {
-        try {
-            new URL(link);
+        if (link.includes("open.spotify.com")) {
             status.valid = true;
             status.statusText = "Converted link to valid spotify URI";
             status.link =
@@ -16,21 +15,17 @@ export function trackLinkValidator(link: string) {
                     .slice(link.indexOf("track/"))
                     .split("?")[0]
                     .replace("track/", "");
-        } catch {
-            if (link.includes("spotify:track")) {
-                status.valid = true;
-                status.statusText = "Passed link is already a URI";
-                status.link = link;
-            } else {
-                status.valid = false;
-                status.statusText = "Unable to validate passed link";
-                status.link = link;
-            }
+        } else if (link.includes("spotify:track")) {
+            status.valid = true;
+            status.statusText = "Passed link is already a URI";
+            status.link = link;
         }
     } else {
         status.done = false;
         status.statusText = "Link doesn' contain 'spotify'";
         status.link = link;
     }
+
+    console.log(status.link);
     return status;
 }

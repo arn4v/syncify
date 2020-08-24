@@ -1,8 +1,8 @@
-import { toggleShuffleRepeat } from "../../spotify/toggle_shuffle_repeat";
+import { nextPreviousTrack } from "../../spotify/next_previous_track";
 
 module.exports = {
-    name: "unshuffle",
-    description: "Resume playing track",
+    name: "previous",
+    description: "Go back one track",
     async execute(message: any, args: any) {
         const platformInfo: any = {
             type: 1,
@@ -10,12 +10,12 @@ module.exports = {
             discordServerId: message.guild.id,
         };
 
-        await toggleShuffleRepeat(platformInfo, false, 1)
-            .then(async (status?: boolean) => {
-                if (status) {
-                    message.reply(`Unshuffled your queue`);
+        await nextPreviousTrack(platformInfo, 2)
+            .then(async (status: any) => {
+                if (status.done) {
+                    message.reply(status.message);
                 } else {
-                    message.reply(`Unable to shuffle queue`);
+                    message.reply(status.message);
                 }
             })
             .catch((error) => {

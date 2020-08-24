@@ -1,7 +1,7 @@
-import { DataHelper } from "../../data/data_helper";
+import { DataHelper } from "../../../data/data_helper";
 
 module.exports = {
-    name: "createsession",
+    name: "create",
     description: "Create session",
     async execute(message: any, args: any) {
         const platformInfo = {
@@ -11,7 +11,7 @@ module.exports = {
         };
 
         await DataHelper.createSession(platformInfo)
-            .then((res) => {
+            .then((res: any) => {
                 message.reply(res).catch(console.error);
             })
             .catch(() =>

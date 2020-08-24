@@ -1,5 +1,5 @@
-import { playTrack } from "../../spotify/play";
-import { getTrackInfo } from "../../spotify/track_info";
+import { playTrack } from "../../../spotify/play";
+import { getTrackInfo } from "../../../spotify/track_info";
 
 module.exports = {
     name: "play",

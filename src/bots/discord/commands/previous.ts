@@ -1,4 +1,4 @@
-import { nextPreviousTrack } from "../../spotify/next_previous_track";
+import { nextPreviousTrack } from "../../../spotify/next_previous_track";
 
 module.exports = {
     name: "previous",
@@ -18,7 +18,7 @@ module.exports = {
                     message.reply(status.message);
                 }
             })
-            .catch((error) => {
+            .catch((error: string) => {
                 console.log(`ERROR: discord/commands/shuffle: ${error}`);
             });
     },

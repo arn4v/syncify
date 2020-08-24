@@ -79,9 +79,7 @@ export async function resumePausePlayback(
 
     await DataHelper.doesSessionExist(platformInfo)
         .then(async (res: any) => {
-            console.log(res);
             if (res.status == 200) {
-                console.log(res);
                 let members: string[] = JSON.parse(res.data.members);
                 try {
                     for (const member of members) {

@@ -1,4 +1,4 @@
-import { getTrackInfo } from "../../spotify/track_info";
+import { getTrackInfo } from "../../../spotify/track_info";
 
 module.exports = {
     name: "track",

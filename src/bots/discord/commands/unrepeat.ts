@@ -1,7 +1,7 @@
-import { toggleShuffleRepeat } from "../../spotify/toggle_shuffle_repeat";
+import { toggleShuffleRepeat } from "../../../spotify/toggle_shuffle_repeat";
 
 module.exports = {
-    name: "shuffle",
+    name: "unrepeat",
     description: "Resume playing track",
     async execute(message: any, args: any) {
         const userId: string = message.member.id;
@@ -11,7 +11,7 @@ module.exports = {
             discordServerId: message.guild.id,
         };
 
-        await toggleShuffleRepeat(platformInfo, true, 1)
+        await toggleShuffleRepeat(platformInfo, "off", 2)
             .then(async (status?: boolean) => {
                 if (status) {
                     message.reply(`Shuffled your queue`);

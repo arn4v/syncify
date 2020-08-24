@@ -3,6 +3,7 @@ import { DataHelper } from "../data/data_helper";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
 import { trackLinkValidator } from "../helpers/spotify_link_validator";
+import { addToQueue } from "./add_to_queue";
 
 export async function playTrack(platformInfo: any, songLink: string) {
     const request_url: string = endpoints.play_track.url;
@@ -86,43 +87,50 @@ export async function playTrack(platformInfo: any, songLink: string) {
 
     await DataHelper.doesSessionExist(platformInfo)
         .then(async (res: any) => {
-            console.log(res);
             if (res.status == 200) {
-                console.log(res);
-                let members: string[] = JSON.parse(res.data.members);
-                try {
-                    for (const member of members) {
-                        console.log("idhar aaya?");
-                        let platInfo = platformInfo;
-                        platInfo.type == 1
-                            ? (platInfo.discordUserId = member)
-                            : (platInfo.telegramUserId = member);
-                        await requestFunc(platInfo).catch((error) =>
-                            console.log(error)
-                        );
+                if (res.data != undefined) {
+                    status.done = false;
+                    status.message = "Please use the queue command ";
+                    let members: string[] = JSON.parse(res.data.members);
+                    try {
+                        for (const member of members) {
+                            console.log("idhar aaya?");
+                            let platInfo = platformInfo;
+                            platInfo.type == 1
+                                ? (platInfo.discordUserId = member)
+                                : (platInfo.telegramUserId = member);
+                            if (JSON.parse(res.data.queue).length >= 1) {
+                                await addToQueue(platInfo, songLink);
+                            } else {
+                                await requestFunc(platInfo).catch((error) =>
+                                    console.log(error)
+                                );
+                            }
+                        }
+                        status.done = true;
+                        status.message = "Playing requested track";
+                    } catch (err) {
+                        if (err) status.done = false;
+                        status.message = "Unable to play requested track";
                     }
-                    status.done = true;
-                    status.message = "Playing requested track";
-                } catch (err) {
-                    if (err) status.done = false;
-                    status.message = "Unable to play requested track";
-                }
-            } else {
-                await requestFunc(platformInfo)
-                    .then((_res: any) => {
-                        if (_res == true) {
-                            status.done = true;
-                            status.message = "Playing requested track";
-                        } else {
+                } else {
+                    await requestFunc(platformInfo)
+                        .then((_res: any) => {
+                            if (_res == true) {
+                                status.done = true;
+                                status.message = "Playing requested track";
+                            } else {
+                                status.done = false;
+                                status.message =
+                                    "Unable to play requested track";
+                            }
+                        })
+                        .catch((error) => {
+                            console.log(error);
                             status.done = false;
                             status.message = "Unable to play requested track";
-                        }
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                        status.done = false;
-                        status.message = "Unable to play requested track";
-                    });
+                        });
+                }
             }
         })
         .catch((error) => {

@@ -48,4 +48,8 @@ export class DataHelper {
     public static doesSessionExist(platformInfo: any) {
         return ORMHelper.doesSessionExist(platformInfo);
     }
+
+    public static addToSessionQueue(platformInfo: any, trackUri: string) {
+        return ORMHelper.addToSessionQueue(platformInfo, trackUri);
+    }
 }

@@ -1,5 +1,5 @@
-import { resumePausePlayback } from "../../spotify/toggle_playback";
-import { getTrackInfo } from "../../spotify/track_info";
+import { resumePausePlayback } from "../../../spotify/toggle_playback";
+import { getTrackInfo } from "../../../spotify/track_info";
 
 module.exports = {
     name: "resume",

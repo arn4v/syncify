@@ -1,7 +1,7 @@
-import { toggleShuffleRepeat } from "../../spotify/toggle_shuffle_repeat";
+import { toggleShuffleRepeat } from "../../../spotify/toggle_shuffle_repeat";
 
 module.exports = {
-    name: "unshuffle",
+    name: "repeat",
     description: "Resume playing track",
     async execute(message: any, args: any) {
         const platformInfo: any = {
@@ -10,15 +10,15 @@ module.exports = {
             discordServerId: message.guild.id,
         };
 
-        await toggleShuffleRepeat(platformInfo, false, 1)
+        await toggleShuffleRepeat(platformInfo, "track", 2)
             .then(async (status?: boolean) => {
                 if (status) {
-                    message.reply(`Unshuffled your queue`);
+                    message.reply(`Shuffled your queue`);
                 } else {
                     message.reply(`Unable to shuffle queue`);
                 }
             })
-            .catch((error) => {
+            .catch((error: string) => {
                 console.log(`ERROR: discord/commands/shuffle: ${error}`);
             });
     },

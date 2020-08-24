@@ -186,6 +186,8 @@ export class ORMHelper {
                     : platformInfo.telegramGroupId;
             session.createdBy = userId;
             session.members = JSON.stringify([userId]);
+            session.admins = JSON.stringify([userId]);
+            session.queue = JSON.stringify([]);
 
             let sessionId;
 
@@ -312,12 +314,8 @@ export class ORMHelper {
     public static async doesSessionExist(platformInfo: any) {
         let connection = getConnection();
         const platform: number = platformInfo.type;
-        // const userId: string =
-        //     platform == 1
-        //         ? platformInfo.discordUserId
-        //         : platformInfo.telegramUserId;
         const groupId: string =
-            platformInfo.type == 1
+            platform == 1
                 ? platformInfo.discordServerId
                 : platformInfo.telegramGroupId;
         let sessionInfo: any = {
@@ -332,7 +330,6 @@ export class ORMHelper {
                 },
             })
             .then((session) => {
-                console.log(session);
                 if (typeof session != "undefined") {
                     sessionInfo.status = 200;
                     sessionInfo.data = session;
@@ -345,5 +342,50 @@ export class ORMHelper {
             });
         // @ts-ignore
         return sessionInfo;
+    }
+
+    public static async addToSessionQueue(platformInfo: any, trackUri: string) {
+        let connection: Connection = getConnection();
+        const platform: number = platformInfo.type;
+        const groupId: string =
+            platform == 1
+                ? platformInfo.discordServerId
+                : platformInfo.telegramGroupId;
+        let status: any = {
+            done: undefined,
+            message: undefined,
+        };
+
+        if (trackUri.length < 22) {
+            await connection
+                .getRepository(Session)
+                .findOne({ where: { platformGroupId: groupId } })
+                .then(async (session: any) => {
+                    session.queue = JSON.stringify(
+                        JSON.parse(session.queue).push(trackUri)
+                    );
+                    await connection.manager
+                        .save(session)
+                        .then(() => {
+                            status.done = true;
+                            status.message = "Added song to queue";
+                        })
+                        .catch((error) => {
+                            console.log(
+                                `ERROR: ORMHelper: addToSessionQueue: manager.save catchBlock: ${error}`
+                            );
+                            status.done = false;
+                            status.message = "Unable to save edited queue";
+                        });
+                })
+                .catch((error: string) =>
+                    console.log(`ERROR: ORMHelper: addToSessionQueue: ${error}`)
+                );
+        } else {
+            status.done = false;
+            status.message = "Passed URI less than 22 characters";
+        }
+        // @ts-ignore
+        return status;
     }
 }

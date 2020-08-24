@@ -16,15 +16,15 @@ export class Session extends Base {
     @Column({ type: "text" })
     createdBy: string;
 
-    // @Column({ type: "text", nullable: true })
-    // admins: string;
+    @Column({ type: "text", nullable: true })
+    admins: string;
 
     @Column({ type: "text" })
     members: string;
 
-    // @Column({ type: "boolean", nullable: true })
-    // playPauseState: boolean;
+    @Column({ type: "boolean", nullable: true })
+    playPauseState: boolean;
 
-    // @Column({ type: "text", nullable: true })
-    // queue: string;
+    @Column({ type: "text", nullable: true })
+    queue: string;
 }

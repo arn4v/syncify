@@ -3,8 +3,8 @@ import dotenv from "dotenv";
 dotenv.config();
 checkEnv();
 
-import { startDiscordBot } from "./discord/bot";
-import { startTelegramBot } from "./telegram/bot";
+import { startDiscordBot } from "./bots/discord/bot";
+import { startTelegramBot } from "./bots/telegram/bot";
 import { startServer } from "./server";
 import { ORMHelper } from "./data/orm_helper";
 

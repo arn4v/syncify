@@ -1,7 +1,7 @@
-import { DataHelper } from "../../data/data_helper";
+import { DataHelper } from "../../../data/data_helper";
 
 module.exports = {
-    name: "joinsession",
+    name: "join",
     description: "Create session",
     async execute(message: any, args: any) {
         const platformInfo = {
@@ -10,7 +10,7 @@ module.exports = {
             discordServerId: message.guild.id,
         };
         await DataHelper.joinSession(platformInfo)
-            .then((res) => {
+            .then((res: any) => {
                 message.reply(res);
             })
             .catch(console.error);

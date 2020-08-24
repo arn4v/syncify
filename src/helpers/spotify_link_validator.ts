@@ -8,6 +8,14 @@ export function trackLinkValidator(link: string) {
     if (link.includes("spotify")) {
         try {
             new URL(link);
+            status.valid = true;
+            status.statusText = "Converted link to valid spotify URI";
+            status.link =
+                "spotify:track:" +
+                link
+                    .slice(link.indexOf("track/"))
+                    .split("?")[0]
+                    .replace("track/", "");
         } catch {
             if (link.includes("spotify:track")) {
                 status.valid = true;
@@ -19,15 +27,6 @@ export function trackLinkValidator(link: string) {
                 status.link = link;
             }
         }
-
-        status.valid = true;
-        status.statusText = "Converted link to valid spotify URI";
-        status.link =
-            "spotify:track:" +
-            link
-                .slice(link.indexOf("track/"))
-                .split("?")[0]
-                .replace("track/", "");
     } else {
         status.done = false;
         status.statusText = "Link doesn' contain 'spotify'";

@@ -1,4 +1,4 @@
-import { resumePausePlayback } from "../../spotify/toggle_playback";
+import { resumePausePlayback } from "../../../spotify/toggle_playback";
 
 module.exports = {
     name: "pause",
@@ -12,8 +12,7 @@ module.exports = {
 
         await resumePausePlayback(2, platformInfo)
             .then((status: any) => {
-                console.log(status);
-                message.reply(status?.message);
+                message.reply(status.message);
             })
             .catch((error: string) => message.reply(error));
     },

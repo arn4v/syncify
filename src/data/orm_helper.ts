@@ -1,4 +1,3 @@
-import path from "path";
 import { Session } from "./typeorm/entity/session.entity";
 import { User } from "./typeorm/entity/user.entity";
 import { createConnection, getConnection, Connection } from "typeorm";
@@ -310,8 +309,17 @@ export class ORMHelper {
         return message;
     }
 
-    public static async doesSessionExist(platformInfo: any): Promise<boolean> {
+    public static async doesSessionExist(platformInfo: any) {
         let connection = getConnection();
+        const platform: number = platformInfo.type;
+        // const userId: string =
+        //     platform == 1
+        //         ? platformInfo.discordUserId
+        //         : platformInfo.telegramUserId;
+        const groupId: string =
+            platformInfo.type == 1
+                ? platformInfo.discordServerId
+                : platformInfo.telegramGroupId;
         let sessionInfo: any = {
             status: undefined,
             data: undefined,
@@ -320,13 +328,11 @@ export class ORMHelper {
             .getRepository(Session)
             .findOne({
                 where: {
-                    platformGroupId:
-                        platformInfo.type == 1
-                            ? platformInfo.discordServerId
-                            : platformInfo.telegramGroupId,
+                    platformGroupId: groupId,
                 },
             })
             .then((session) => {
+                console.log(session);
                 if (typeof session != "undefined") {
                     sessionInfo.status = 200;
                     sessionInfo.data = session;
@@ -338,6 +344,6 @@ export class ORMHelper {
                 if (error != null) sessionInfo.status = false;
             });
         // @ts-ignore
-        return status;
+        return sessionInfo;
     }
 }

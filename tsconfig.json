@@ -3,6 +3,7 @@
         "lib": ["dom", "es6", "es2017", "esnext.asynciterable"],
         "target": "ES6",
         "module": "CommonJS",
+        "sourceMap": true,
         "pretty": true,
         "newLine": "lf",
         "rootDir": "./src",

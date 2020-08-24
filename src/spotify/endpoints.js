@@ -19,6 +19,14 @@ export const endpoints = {
         url: "https://api.spotify.com/v1/me/player/currently-playing",
         method: "get",
     },
+    next_track: {
+        url: "https://api.spotify.com/v1/me/player/next",
+        method: "post",
+    },
+    previous_track: {
+        url: "https://api.spotify.com/v1/me/player/previous",
+        method: "post",
+    },
     refresh_token: { url: "https://accounts.spotify.com/api/token" },
     resume_playback: { url: "https://api.spotify.com/v1/me/player/play" },
     pause_playback: { url: "https://api.spotify.com/v1/me/player/pause" },

@@ -11,12 +11,8 @@ export async function resumePausePlayback(
         request_type == 1
             ? endpoints.resume_playback.url
             : endpoints.pause_playback.url;
-    let status: any = {
-        done: undefined,
-        message: undefined,
-    };
     let new_access_token: string;
-
+    let done: boolean;
     let requestFunc = async (platInfo: any) => {
         let _done: boolean;
         await DataHelper.fetchSpotifyTokens(platInfo)
@@ -30,7 +26,7 @@ export async function resumePausePlayback(
                     },
                 })
                     .then((res) => {
-                        res.status == 204 ? (_done = true) : (_done = false);
+                        res.status == 204 ? (_done = true) : (done = false);
                     })
                     .catch(async (error) => {
                         if (error.response.status == 401) {
@@ -74,58 +70,39 @@ export async function resumePausePlayback(
                 console.log("ERROR: DataHelper.fetchSpotifyTokens: " + __error)
             );
         // @ts-ignore
-        return _done;
+        return done;
     };
 
-    await DataHelper.doesSessionExist(platformInfo)
-        .then(async (res: any) => {
-            console.log(res);
-            if (res.status == 200) {
-                console.log(res);
-                let members: string[] = JSON.parse(res.data.members);
-                try {
-                    for (const member of members) {
-                        let platInfo = platformInfo;
-                        platInfo.type == 1
-                            ? (platInfo.discordUserId = member)
-                            : (platInfo.telegramUserId = member);
-                        await requestFunc(platInfo).catch((error) =>
-                            console.log(error)
-                        );
-                    }
-                    status.done = true;
-                    status.message =
-                        request_type == 1
-                            ? "Resumed playback for this session"
-                            : "Paused playback for the session.";
-                } catch (err) {
-                    if (err) status.done = false;
-                    status.message = `Unable to pause for all session members`;
+    await DataHelper.doesSessionExist(platformInfo).then(async (res: any) => {
+        if (res.status == 200) {
+            let members: string[] = JSON.parse(res.data.members);
+            try {
+                for (const member of members) {
+                    let platInfo = platformInfo;
+                    platInfo.type == 1
+                        ? (platInfo.discordUserId = member)
+                        : (platInfo.telegramUserId = member);
+                    await requestFunc(platInfo).catch((error) =>
+                        console.log(error)
+                    );
                 }
-            } else {
-                await requestFunc(platformInfo)
-                    .then((_res: any) => {
-                        if (_res == true) {
-                            status.done = true;
-                            status.message = `Paused playback`;
-                        } else {
-                            status.done = false;
-                            status.message = `Unable to pause playback`;
-                        }
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                        status.done = false;
-                        status.message = `Unable to pause playback`;
-                    });
+                done = true;
+            } catch (err) {
+                if (err) done = false;
             }
-        })
-        .catch((error) => {
-            console.log(error);
-            status.done = false;
-            status.message = `Unable to pause`;
-        });
+        } else {
+            await requestFunc(platformInfo)
+                .then((status: any) => {
+                    if (status == true) done = true;
+                    else done = false;
+                })
+                .catch((error) => {
+                    console.log(error);
+                    done = false;
+                });
+        }
+    });
 
     // @ts-ignore
-    return status;
+    return done;
 }

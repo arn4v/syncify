@@ -4,7 +4,6 @@ module.exports = {
     name: "pause",
     description: "Resume playing track",
     async execute(message: any, args: any) {
-
         const platformInfo: any = {
             type: 1,
             discordUserId: message.member.id,
@@ -12,12 +11,9 @@ module.exports = {
         };
 
         await resumePausePlayback(2, platformInfo)
-            .then((successfull: boolean) => {
-                message.reply(
-                    successfull
-                        ? "> Paused playback"
-                        : "> Unable to pause playback"
-                );
+            .then((status: any) => {
+                console.log(status);
+                message.reply(status?.message);
             })
             .catch((error: string) => message.reply(error));
     },

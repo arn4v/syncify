@@ -14,8 +14,17 @@ export class Session extends Base {
     platformGroupId: string;
 
     @Column({ type: "text" })
-    members: string;
+    createdBy: string;
+
+    // @Column({ type: "text", nullable: true })
+    // admins: string;
 
     @Column({ type: "text" })
-    createdBy: string;
+    members: string;
+
+    // @Column({ type: "boolean", nullable: true })
+    // playPauseState: boolean;
+
+    // @Column({ type: "text", nullable: true })
+    // queue: string;
 }

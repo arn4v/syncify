@@ -1,5 +1,6 @@
 export const endpoints = {
     base_url: { url: "https://api.spotify.com/v1" },
+    play_track: { url: "https://api.spotify.com/v1/me/player/play" },
     add_to_queue: {
         url: "https://api.spotify.com/v1/me/player/queue",
         method: "post",

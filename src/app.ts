@@ -11,8 +11,6 @@ import { ORMHelper } from "./data/orm_helper";
 startServer();
 ORMHelper.connection();
 ORMHelper.deleteSessions({ onStart: true });
-//
-//
 
 if ((process.env.DISCORD_BOT as string) == "true") {
     startDiscordBot();

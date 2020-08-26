@@ -1,5 +1,5 @@
 import { DataHelper } from "../../../data/data_helper";
-import { MethodStatus } from "../../../types/status";
+import { MethodStatus } from "../../../interfaces/global";
 
 module.exports = {
     name: "join",

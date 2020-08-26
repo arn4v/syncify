@@ -1,8 +1,7 @@
 import { Session } from "./typeorm/entity/session.entity";
+import { MethodStatus, SpotifyInfo, PlatformInfo } from "../interfaces/global";
 import { User } from "./typeorm/entity/user.entity";
 import { createConnection, getConnection, Connection } from "typeorm";
-import { MethodStatus } from "../types/status";
-import { PlatformInfo } from "../types/platform_info";
 
 interface DeleteSessionParameters {
     onStart?: boolean;
@@ -88,12 +87,17 @@ export class ORMHelper {
     }
 
     public static async doesUserExist(
-        platform: number,
-        userId: string
-    ): Promise<boolean> {
+        platformInfo: PlatformInfo
+    ): Promise<MethodStatus> {
         let connection: Connection = getConnection();
-        // @ts-ignore
-        let result: boolean | undefined = undefined;
+        let platform = platformInfo.type;
+        let userId =
+            platform == 1
+                ? platformInfo.discordUserId
+                : platformInfo.telegramUserId;
+        let status: MethodStatus = {
+            done: undefined,
+        };
 
         await connection
             .getRepository(User)
@@ -105,27 +109,25 @@ export class ORMHelper {
             })
             .then((data?: object) => {
                 if (data == undefined) {
-                    result = false;
+                    status.done = false;
                 } else {
-                    result = true;
+                    status.done = true;
                 }
             })
             .catch(console.error);
-        // @ts-ignore
-        return result;
+        return status;
     }
 
-    public static async fetchSpotifyTokens(platformInfo: any) {
+    public static async fetchSpotifyTokens(
+        platformInfo: PlatformInfo
+    ): Promise<SpotifyInfo> {
         const platform = platformInfo.type;
         const userId =
             platform == 1
                 ? platformInfo.discordUserId
                 : platformInfo.telegramUserId;
         let connection: Connection = getConnection();
-        let spotifyInfo = {
-            spotifyAccessToken: undefined,
-            spotifyRefreshToken: undefined,
-        };
+        let spotifyInfo: SpotifyInfo = Object();
 
         await connection
             .getRepository(User)
@@ -147,13 +149,13 @@ export class ORMHelper {
 
     public static async updateSpotifyTokens(
         newAccessToken: string,
-        platformInfo: any
+        platformInfo: PlatformInfo
     ) {
         const platform: number = platformInfo.type;
-        const userId: string =
-            platform == 1
-                ? platformInfo.discordUserId
-                : platformInfo.telegramUserId;
+        const userId: string = (platform == 1
+            ? platformInfo.discordUserId
+            : platformInfo.telegramUserId) as string;
+
         let connection = getConnection();
 
         await connection
@@ -166,7 +168,7 @@ export class ORMHelper {
             })
             .then(async (user: any) => {
                 user.spotifyAccessToken = newAccessToken;
-                await connection.manager.save(user).then((user?: any) => {
+                await connection.manager.save(user).then((user?: User) => {
                     console.log(
                         // @ts-ignore
                         `LOG: ORMHelper: updateSpotifyTokens: successfully updated access token for user ${user?.syncifyUserId}`
@@ -175,13 +177,14 @@ export class ORMHelper {
             });
     }
 
-    public static async createSession(platformInfo: any) {
+    public static async createSession(platformInfo: PlatformInfo) {
         let connection = getConnection();
-        let type: number = platformInfo.type;
-        let userId: string =
-            type == 1
-                ? platformInfo.discordUserId
-                : platformInfo.telegramUserId;
+
+        const platform: number = platformInfo.type;
+        const userId: string = (platform == 1
+            ? platformInfo.discordUserId
+            : platformInfo.telegramUserId) as string;
+
         let createSession = async () => {
             let _status: MethodStatus = {
                 done: undefined,
@@ -189,11 +192,10 @@ export class ORMHelper {
                 data: undefined,
             };
             let session = new Session();
-            session.platform = type;
-            session.platformGroupId =
-                type == 1
-                    ? platformInfo.discordServerId
-                    : platformInfo.telegramGroupId;
+            session.platform = platform;
+            session.platformGroupId = (platform == 1
+                ? platformInfo.discordServerId
+                : platformInfo.telegramGroupId) as string;
             session.createdBy = userId;
             session.members = JSON.stringify([userId]);
             session.admins = JSON.stringify([userId]);
@@ -223,52 +225,67 @@ export class ORMHelper {
             message: undefined,
         };
 
-        await connection
-            .getRepository(Session)
-            .findOne({
-                where: {
-                    platformGroupId:
-                        platformInfo.type == 1
-                            ? platformInfo.discordServerId
-                            : platformInfo.telegramGroupId,
-                },
-            })
-            .then(async (data: any) => {
-                if (data == undefined) {
-                    await createSession()
-                        .then((_status: MethodStatus) => {
-                            console.log(_status);
-                            if (_status.done == true) {
-                                console.log(_status);
-                                status = _status;
-                            }
-                            console.log(
-                                `Successfully created session ${status.data.sessionId}`
-                            );
+        await this.doesUserExist(platformInfo)
+            .then(async (status: MethodStatus) => {
+                if (status.done) {
+                    await connection
+                        .getRepository(Session)
+                        .findOne({
+                            where: {
+                                platformGroupId:
+                                    platformInfo.type == 1
+                                        ? platformInfo.discordServerId
+                                        : platformInfo.telegramGroupId,
+                            },
                         })
-                        .catch((error) =>
-                            console.log(
-                                `ERROR: ORMHelper.createSession: ${error}`
-                            )
-                        );
+                        .then(async (data: any) => {
+                            if (data == undefined) {
+                                await createSession()
+                                    .then((_status: MethodStatus) => {
+                                        console.log(_status);
+                                        if (_status.done == true) {
+                                            console.log(_status);
+                                            status = _status;
+                                        }
+                                        console.log(
+                                            `Successfully created session ${status.data.sessionId}`
+                                        );
+                                    })
+                                    .catch((error) =>
+                                        console.log(
+                                            `ERROR: ORMHelper.createSession: ${error}`
+                                        )
+                                    );
+                            } else {
+                                status.done = false;
+                                status.message =
+                                    "A session already exists here";
+                                console.log(
+                                    `LOG: createSession: A session already exists in this server/group`
+                                );
+                            }
+                        })
+                        .catch((error: object) => {
+                            console.log("ERROR: createSession: ", error);
+                            status.done = false;
+                            status.message = "Unable to create session";
+                            // createSession();
+                        });
                 } else {
                     status.done = false;
-                    status.message = "A session already exists here";
-                    console.log(
-                        `LOG: createSession: A session already exists in this server/group`
-                    );
+                    status.message = "Please register first.";
                 }
             })
-            .catch((error: object) => {
-                console.log("ERROR: createSession: ", error);
+            .catch(() => {
                 status.done = false;
-                status.message = "Unable to create session";
-                // createSession();
+                status.message = "Please register first";
             });
         return status;
     }
 
-    public static async joinSession(platformInfo: any): Promise<MethodStatus> {
+    public static async joinSession(
+        platformInfo: PlatformInfo
+    ): Promise<MethodStatus> {
         let connection: Connection = getConnection();
         const platform = platformInfo.type;
         const userId =
@@ -292,7 +309,7 @@ export class ORMHelper {
                 },
             })
             .then(async (session?: object) => {
-                await this.doesUserExist(platform, userId)
+                await this.doesUserExist(platformInfo)
                     .then(async (res) => {
                         if (res) {
                             // @ts-expect-error
@@ -338,11 +355,11 @@ export class ORMHelper {
     }
 
     public static async doesSessionExist(
-        platformInfo: any
+        platformInfo: PlatformInfo
     ): Promise<MethodStatus> {
         let connection = getConnection();
         const platform: number = platformInfo.type;
-        const groupId: string =
+        const groupId: string | undefined =
             platform == 1
                 ? platformInfo.discordServerId
                 : platformInfo.telegramGroupId;
@@ -378,10 +395,10 @@ export class ORMHelper {
         return status;
     }
 
-    public static async updatePlayInstantStatus(platformInfo: any) {
+    public static async updatePlayInstantStatus(platformInfo: PlatformInfo) {
         let connection: Connection = getConnection();
         const platform: number = platformInfo.type;
-        const groupId: string =
+        const groupId: string | undefined =
             platform == 1
                 ? platformInfo.discordServerId
                 : platformInfo.telegramGroupId;
@@ -408,19 +425,17 @@ export class ORMHelper {
         return status;
     }
 
-    public static async addToSessionQueue(platformInfo: any, trackUri: string) {
+    public static async addToSessionQueue(
+        platformInfo: PlatformInfo,
+        trackUri: string
+    ) {
         let connection: Connection = getConnection();
         const platform: number = platformInfo.type;
-        const groupId: string =
+        const groupId: string | undefined =
             platform == 1
                 ? platformInfo.discordServerId
                 : platformInfo.telegramGroupId;
-        let status: any = {
-            done: undefined,
-            message: undefined,
-            queue: undefined,
-        };
-
+        let status: MethodStatus = Object();
         if (trackUri.length <= 36) {
             await connection
                 .getRepository(Session)
@@ -434,7 +449,7 @@ export class ORMHelper {
                         .then((session: any) => {
                             status.done = true;
                             status.message = "Added song to queue";
-                            status.queue = session.queue;
+                            status.data = { queue: session.queue };
                         })
                         .catch((error) => {
                             console.log(

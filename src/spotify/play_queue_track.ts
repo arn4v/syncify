@@ -1,6 +1,6 @@
 import axios from "axios";
 import { DataHelper } from "../data/data_helper";
-import { MethodStatus } from "../types/status";
+import { MethodStatus } from "../interfaces/global";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
 import { trackLinkValidator } from "../helpers/spotify_link_validator";
@@ -185,7 +185,7 @@ export async function playOrAddToQueue(
                             } else {
                                 await addToQueue(platInfo, isValid.link)
                                     .then((_res) => {
-                                        console.log(_res)
+                                        console.log(_res);
                                         status.done = _res;
                                         status.message =
                                             "Added song to queue for the session";

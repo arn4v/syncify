@@ -2,11 +2,11 @@ import axios from "axios";
 import { DataHelper } from "../data/data_helper";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
-import { MethodStatus } from "../types/status";
+import { MethodStatus, PlatformInfo, SpotifyInfo } from "../interfaces/global";
 
 export async function seekRequest(
-    platformInfo: any,
-    spotifyInfo: any,
+    platformInfo: PlatformInfo,
+    spotifyInfo: SpotifyInfo,
     position_ms: number | undefined
 ): Promise<MethodStatus> {
     let status: MethodStatus = {
@@ -15,7 +15,7 @@ export async function seekRequest(
     };
 
     const request_url: string = endpoints.seek.url;
-    let access_token: string = spotifyInfo.spotifyAccessToken;
+    let access_token: string | undefined = spotifyInfo.spotifyAccessToken;
     let new_access_token: string;
 
     if (position_ms != undefined) {
@@ -81,12 +81,12 @@ export async function seekRequest(
 // seekRequestFunc to use to carry out the call to the Spotify
 // Web API
 async function fetchAndRequest(
-    platformInfo: any,
+    platformInfo: PlatformInfo,
     rt: number
 ): Promise<boolean> {
     let done: boolean = false;
     await DataHelper.fetchSpotifyTokens(platformInfo)
-        .then(async (spotifyInfo) => {
+        .then(async (spotifyInfo: SpotifyInfo) => {
             await seekRequest(platformInfo, spotifyInfo, rt)
                 .then((res) => {
                     if (res.done) {

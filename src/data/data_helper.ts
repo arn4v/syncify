@@ -1,4 +1,5 @@
 import { ORMHelper } from "./orm_helper";
+import { PlatformInfo } from "../interfaces/global";
 
 // TODO: Assign types of databases a number. For example:
 // 1: Firebase
@@ -12,7 +13,7 @@ export class DataHelper {
     public static addUser(
         spotifyAccessToken: string,
         spotifyRefreshToken: string,
-        platformInfo: any
+        platformInfo: PlatformInfo
     ) {
         ORMHelper.addUser(
             (spotifyAccessToken = spotifyAccessToken),
@@ -21,30 +22,34 @@ export class DataHelper {
         );
     }
 
-    public static fetchSpotifyTokens(platformInfo: any) {
+    public static fetchSpotifyTokens(platformInfo: PlatformInfo) {
         return ORMHelper.fetchSpotifyTokens(platformInfo);
     }
 
     public static updateSpotifyAccessToken(
         accessToken: string,
-        platformInfo: any
+        platformInfo: PlatformInfo
     ) {
         ORMHelper.updateSpotifyTokens(accessToken, platformInfo);
     }
 
-    public static createSession(platformInfo: any) {
+    public static createSession(platformInfo: PlatformInfo) {
         return ORMHelper.createSession(platformInfo);
     }
 
-    public static joinSession(platformInfo: any) {
+    public static joinSession(platformInfo: PlatformInfo) {
         return ORMHelper.joinSession(platformInfo);
     }
 
-    public static doesSessionExist(platformInfo: any) {
+    public static doesUserExist(platformInfo: PlatformInfo) {
         return ORMHelper.doesSessionExist(platformInfo);
     }
 
-    public static updatePlayInstantStatus(platformInfo: any) {
+    public static doesSessionExist(platformInfo: PlatformInfo) {
+        return ORMHelper.doesSessionExist(platformInfo);
+    }
+
+    public static updatePlayInstantStatus(platformInfo: PlatformInfo) {
         return ORMHelper.updatePlayInstantStatus(platformInfo);
     }
 }

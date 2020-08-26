@@ -1,10 +1,9 @@
-import axios, { Method } from "axios";
+import axios from "axios";
 import { DataHelper } from "../data/data_helper";
+import { MethodStatus } from "../interfaces/global";
+import { Track, Artist } from '../interfaces/spotify'
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
-import { Track } from "../types/track";
-import { Artist } from "../types/artist";
-import { MethodStatus } from "../types/status";
 
 export async function trackInfoRequest(
     platformInfo: any,
@@ -161,7 +160,7 @@ export async function getTrackInfo(platformInfo: any) {
 
     await DataHelper.doesSessionExist(platformInfo)
         .then(async (res: MethodStatus) => {
-            if (res.done ) {
+            if (res.done) {
                 let admin: string = res.data.createdBy;
                 let platInfo = platformInfo;
                 platInfo.type == 1

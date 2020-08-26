@@ -1,4 +1,8 @@
-import { Artist } from "./artist";
+export interface Artist {
+    name: string;
+    link: string;
+    uri: string;
+}
 
 export interface Track {
     name: string | undefined;

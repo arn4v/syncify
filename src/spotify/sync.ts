@@ -1,12 +1,12 @@
 import { DataHelper } from "../data/data_helper";
 import { togglePlaybackRequest } from "./toggle_playback";
 import { trackInfoRequest } from "./track_info";
-import { MethodStatus } from "../types/status";
-import { Track } from "../types/track";
 import { seekRequest } from "./seek";
+import { MethodStatus } from "../interfaces/global";
+import { Track } from "../interfaces/spotify";
 
 async function getAdminTrackInfo(platformInfo: any) {
-    let trackInfo: Track;
+    let trackInfo: Track = Object();
     await DataHelper.fetchSpotifyTokens(platformInfo).then(
         async (spotifyInfo: any) => {
             await trackInfoRequest(platformInfo, spotifyInfo)
@@ -18,7 +18,6 @@ async function getAdminTrackInfo(platformInfo: any) {
                 });
         }
     );
-    // @ts-ignore
     return trackInfo ?? undefined;
 }
 
@@ -28,6 +27,7 @@ export async function syncSession(platformInfo: any): Promise<MethodStatus> {
         message: undefined,
     };
 
+    await DataHelper.doesUserExist(platformInfo).then().catch();
     await DataHelper.doesSessionExist(platformInfo)
         .then(async (res: MethodStatus) => {
             if (res.done) {

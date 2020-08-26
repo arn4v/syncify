@@ -1,89 +1,116 @@
 import axios from "axios";
-import qs from "qs";
 import { DataHelper } from "../data/data_helper";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
-import { MethodStatus } from "../types/status";
+import { PlatformInfo, MethodStatus, SpotifyInfo } from "../interfaces/global";
+
+async function toggleShuffleRepeatRequest(
+    requestType: number,
+    toggleState: boolean | string,
+    spotifyInfo: SpotifyInfo
+) {
+    let requestUrl: string =
+        requestType == 1
+            ? endpoints.shuffle_playback.url
+            : endpoints.repeat_playback.url;
+
+    let status: MethodStatus = {
+        done: undefined,
+        rawData: undefined,
+    };
+
+    await axios({
+        method: "put",
+        url: requestUrl,
+        headers: {
+            Authorization: `Bearer ${spotifyInfo.spotifyAccessToken}`,
+        },
+        params: { state: toggleState },
+    })
+        .then(async (res: any) => {
+            if (res.status == (200 || 201 || 204)) {
+                status.done = true;
+                status.rawData = res.data;
+            } else if (res.status == (400 || 401)) {
+                await refreshAccessToken(spotifyInfo.spotifyRefreshToken).then(
+                    async (newAccessToken: string) => {
+                        await axios({
+                            method: "put",
+                            url: requestUrl,
+                            headers: {
+                                Authorization: `Bearer ${newAccessToken}`,
+                            },
+                            params: { state: toggleState },
+                        })
+                            .then(async (_res: any) => {
+                                if (_res.status == (200 || 201)) {
+                                    status.done = true;
+                                    status.rawData = _res.data;
+                                } else {
+                                    status.done = false;
+                                    status.rawData = _res.data;
+                                }
+                            })
+                            .catch((error: Error) => {
+                                status.done = false;
+                                status.error = error;
+                                console.log(
+                                    `ERROR: toggleShuffle: axiosFunc: Catch Block ${error}`
+                                );
+                            });
+                    }
+                );
+            } else {
+                status.done = true;
+            }
+        })
+        .catch((error) => {
+            status.done = false;
+            status.error = error;
+            console.log(`ERROR: toggleShuffle: ${error}`);
+        });
+    return status;
+}
+
+async function fetchAndQuery(
+    platformInfo: PlatformInfo,
+    toggleState: boolean | string,
+    requestType: number
+): Promise<MethodStatus> {
+    let status: MethodStatus = {
+        done: undefined,
+    };
+    await DataHelper.fetchSpotifyTokens(platformInfo).then(
+        async (spotifyInfo: SpotifyInfo) => {
+            await toggleShuffleRepeatRequest(
+                requestType,
+                toggleState,
+                spotifyInfo
+            )
+                .then(async (res: MethodStatus) => {
+                    if (res.done) {
+                        status = res;
+                    } else {
+                        status.done = false;
+                    }
+                })
+                .catch((error: Error) =>
+                    console.log(
+                        `ERROR: toggleShuffle: Last catch block: ${error}`
+                    )
+                );
+        }
+    );
+    return status;
+}
 
 export async function toggleShuffleRepeat(
-    platformInfo: object,
+    platformInfo: PlatformInfo,
     toggleState: boolean | string,
     request_type: number
 ) {
-    let request_url: string =
-        request_type == 1
-            ? endpoints.shuffle_playback.url
-            : endpoints.repeat_playback.url;
-    let status: any = {
-        done: undefined,
-        message: undefined,
-    };
-    let axiosFunc = async (access_token: string) => {
-        let result = undefined;
-        await axios({
-            method: "put",
-            url: request_url,
-            headers: {
-                Authorization: `Bearer ${access_token}`,
-            },
-            params: { state: toggleState },
-        })
-            .then((res) => {
-                result = { type: 0, returned: res };
-            })
-            .catch((error) => {
-                result = { type: 1, returned: error };
-                console.log(`ERROR: toggleShuffle: ${error}`);
-            });
-        return result;
-    };
-
-    let requestFunc = async (platInfo: any) => {
-        await DataHelper.fetchSpotifyTokens(platformInfo).then(
-            async (spotifyInfo) => {
-                // @ts-ignore
-                await axiosFunc(spotifyInfo.spotifyAccessToken)
-                    .then(async (res: any) => {
-                        let response =
-                            res.type == 0
-                                ? res.returned
-                                : res.returned.response;
-                        if (response.status == (200 || 201 || 204)) {
-                            status = true;
-                        } else if (response.status == (400 || 401)) {
-                            await refreshAccessToken(
-                                spotifyInfo.spotifyRefreshToken
-                            ).then(async (new_access_token) => {
-                                await axiosFunc(new_access_token)
-                                    .then(async (_res: any) => {
-                                        let _response =
-                                            _res.type == 0
-                                                ? _res.returned
-                                                : _res.returned.response;
-                                        if (_response.status == (200 || 201)) {
-                                            status = true;
-                                        } else {
-                                            status = false;
-                                        }
-                                    })
-                                    .catch((error) => {
-                                        status = false;
-                                        console.log(
-                                            `ERROR: toggleShuffle: axiosFunc: Catch Block ${error}`
-                                        );
-                                    });
-                            });
-                        } else {
-                            status = true;
-                        }
-                    })
-                    .catch((error) =>
-                        console.log(
-                            `ERROR: toggleShuffle: Last catch block: ${error}`
-                        )
-                    );
-            }
-        );
+    let status: MethodStatus = {
+        done: false,
     };
 
     await DataHelper.doesSessionExist(platformInfo)
@@ -98,9 +125,11 @@ export async function toggleShuffleRepeat(
                         platInfo.type == 1
                             ? (platInfo.discordUserId = member)
                             : (platInfo.telegramUserId = member);
-                        await requestFunc(platInfo).catch((error) =>
-                            console.log(error)
-                        );
+                        await fetchAndQuery(
+                            platInfo,
+                            toggleState,
+                            request_type
+                        ).catch((error) => console.log(error));
                     }
                     status.done = true;
                     status.message =
@@ -115,7 +144,7 @@ export async function toggleShuffleRepeat(
                             : "Unable to put playback on repeat for session";
                 }
             } else {
-                await requestFunc(platformInfo)
+                await fetchAndQuery(platformInfo, toggleState, request_type)
                     .then((_res: any) => {
                         if (_res == true) {
                             status.done = true;
@@ -146,6 +175,5 @@ export async function toggleShuffleRepeat(
             status.done = false;
             status.message = `Unable to pause`;
         });
-
     return status;
 }

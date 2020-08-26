@@ -2,7 +2,7 @@ import axios from "axios";
 import { DataHelper } from "../data/data_helper";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
-import { MethodStatus } from "../types/status";
+import { MethodStatus, PlatformInfo, SpotifyInfo } from "../interfaces/global";
 
 /**
     This function exists purely to be used by other Spotify methods in this
@@ -12,8 +12,8 @@ import { MethodStatus } from "../types/status";
     used for individual queries in chat bots. 
 **/
 export async function togglePlaybackRequest(
-    platformInfo: any,
-    spotifyInfo: any,
+    platformInfo: PlatformInfo,
+    spotifyInfo: SpotifyInfo,
     request_type: number
 ): Promise<MethodStatus> {
     let status: MethodStatus = {
@@ -26,7 +26,8 @@ export async function togglePlaybackRequest(
             ? endpoints.resume_playback.url
             : endpoints.pause_playback.url;
 
-    let access_token: string = spotifyInfo.spotifyAccessToken;
+    let access_token: string | undefined =
+        spotifyInfo.spotifyAccessToken ?? undefined;
     let new_access_token: string;
 
     await axios({

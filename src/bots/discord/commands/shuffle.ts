@@ -1,19 +1,19 @@
 import { toggleShuffleRepeat } from "../../../spotify/toggle_shuffle_repeat";
+import { MethodStatus, PlatformInfo } from "../../../interfaces/global";
 
 module.exports = {
     name: "shuffle",
     description: "Resume playing track",
     async execute(message: any, args: any) {
-        const userId: string = message.member.id;
-        const platformInfo: any = {
+        const platformInfo: PlatformInfo = {
             type: 1,
             discordUserId: message.member.id,
             discordServerId: message.guild.id,
         };
 
         await toggleShuffleRepeat(platformInfo, true, 1)
-            .then(async (status?: boolean) => {
-                if (status) {
+            .then(async (res: MethodStatus) => {
+                if (res.done) {
                     message.reply(`Shuffled your queue`);
                 } else {
                     message.reply(`Unable to shuffle queue`);

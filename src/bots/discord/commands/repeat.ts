@@ -1,4 +1,5 @@
 import { toggleShuffleRepeat } from "../../../spotify/toggle_shuffle_repeat";
+import { MethodStatus } from "../../../interfaces/global";
 
 module.exports = {
     name: "repeat",
@@ -11,7 +12,7 @@ module.exports = {
         };
 
         await toggleShuffleRepeat(platformInfo, "track", 2)
-            .then(async (status?: boolean) => {
+            .then(async (res: MethodStatus) => {
                 if (status) {
                     message.reply(`Shuffled your queue`);
                 } else {

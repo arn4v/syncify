@@ -22,9 +22,6 @@ export class Session extends Base {
     @Column({ type: "text" })
     members: string;
 
-    @Column({ type: "boolean", nullable: true })
-    playPauseState: boolean;
-
-    @Column({ type: "text", nullable: true })
-    queue: string;
+    @Column({ type: "boolean" })
+    playInstant: boolean;
 }

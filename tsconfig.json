@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "lib": ["dom", "es6", "es2017", "esnext.asynciterable"],
-        "target": "ES6",
+        "target": "ES2015",
         "module": "CommonJS",
         "pretty": true,
         "newLine": "lf",

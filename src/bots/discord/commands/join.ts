@@ -1,4 +1,5 @@
 import { DataHelper } from "../../../data/data_helper";
+import { MethodStatus } from "../../../types/status";
 
 module.exports = {
     name: "join",
@@ -10,8 +11,8 @@ module.exports = {
             discordServerId: message.guild.id,
         };
         await DataHelper.joinSession(platformInfo)
-            .then((res: any) => {
-                message.reply(res);
+            .then((res: MethodStatus) => {
+                message.reply(res.message).catch(console.error);
             })
             .catch(console.error);
     },

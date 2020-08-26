@@ -3,6 +3,7 @@ import qs from "qs";
 import { DataHelper } from "../data/data_helper";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
+import { MethodStatus } from "../types/status";
 
 export async function toggleShuffleRepeat(
     platformInfo: object,
@@ -86,9 +87,9 @@ export async function toggleShuffleRepeat(
     };
 
     await DataHelper.doesSessionExist(platformInfo)
-        .then(async (res: any) => {
+        .then(async (res: MethodStatus) => {
             console.log(res);
-            if (res.status == 200) {
+            if (res.done) {
                 console.log(res);
                 let members: string[] = JSON.parse(res.data.members);
                 try {

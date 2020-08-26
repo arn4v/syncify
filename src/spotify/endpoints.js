@@ -59,4 +59,7 @@ export const endpoints = {
         method: "get",
         params: [{ name: "q" }, { name: "type" }, { name: "limit" }],
     },
+    seek: {
+        url: "https://api.spotify.com/v1/me/player/seek",
+    },
 };

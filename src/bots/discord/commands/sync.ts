@@ -1,7 +1,7 @@
-import { togglePlayback } from "../../../spotify/toggle_playback";
+import { syncSession } from "../../../spotify/sync";
 
 module.exports = {
-    name: "pause",
+    name: "sync",
     description: "Resume playing track",
     async execute(message: any, args: any) {
         const platformInfo: any = {
@@ -10,7 +10,7 @@ module.exports = {
             discordServerId: message.guild.id,
         };
 
-        await togglePlayback(2, platformInfo)
+        await syncSession(platformInfo)
             .then((status: any) => {
                 message.reply(status.message);
             })

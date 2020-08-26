@@ -4,45 +4,41 @@ import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
 import { MethodStatus } from "../types/status";
 
-/**
-    This function exists purely to be used by other Spotify methods in this
-    directory that use DataHelper.fetchSpotifyTokens as well. In order to 
-    avoid that method from being called two times unnecessarily, this function 
-    has been extracted from the main togglePlayback function that is to be 
-    used for individual queries in chat bots. 
-**/
-export async function togglePlaybackRequest(
+export async function seekRequest(
     platformInfo: any,
     spotifyInfo: any,
-    request_type: number
+    position_ms: number | undefined
 ): Promise<MethodStatus> {
     let status: MethodStatus = {
         done: undefined,
         message: undefined,
     };
 
-    const request_url: string =
-        request_type == 1
-            ? endpoints.resume_playback.url
-            : endpoints.pause_playback.url;
-
+    const request_url: string = endpoints.seek.url;
     let access_token: string = spotifyInfo.spotifyAccessToken;
     let new_access_token: string;
 
-    await axios({
-        url: request_url,
-        method: "put",
-        headers: {
-            Authorization: "Bearer " + access_token,
-        },
-    })
-        .then((res) => {
-            res.status == 204 ? (status.done = true) : (status.done = false);
+    if (position_ms != undefined) {
+        await axios({
+            url: request_url,
+            method: "put",
+            headers: {
+                Authorization: "Bearer " + access_token,
+            },
+            params: {
+                position_ms: position_ms,
+            },
         })
-        .catch(async (error) => {
-            if (error.response.status == 401) {
-                await refreshAccessToken(spotifyInfo.spotifyRefreshToken).then(
-                    async (data: any) => {
+            .then((res) => {
+                res.status == 204
+                    ? (status.done = true)
+                    : (status.done = false);
+            })
+            .catch(async (error) => {
+                if (error.response.status == 401) {
+                    await refreshAccessToken(
+                        spotifyInfo.spotifyRefreshToken
+                    ).then(async (data: any) => {
                         new_access_token = data;
                         DataHelper.updateSpotifyAccessToken(data, platformInfo);
                         await axios({
@@ -50,6 +46,9 @@ export async function togglePlaybackRequest(
                             method: "put",
                             headers: {
                                 Authorization: "Bearer " + new_access_token,
+                            },
+                            params: {
+                                position_ms: position_ms,
                             },
                         })
                             .then((_res) => {
@@ -63,20 +62,23 @@ export async function togglePlaybackRequest(
                                     _error
                                 )
                             );
-                    }
-                );
-            } else {
-                console.log(
-                    `ERROR: SpotifyHelper.resumePlayback: ${error.response.status}`
-                );
-                status.done = false;
-            }
-        });
+                    });
+                } else {
+                    console.log(
+                        `ERROR: SpotifyHelper.resumePlayback: ${error.response.status}`
+                    );
+                    status.done = false;
+                }
+            });
+    } else {
+        status.done = false;
+        status.message = "Position cannot be undefined";
+    }
     return status;
 }
 
 // This function serves to fetch spotify access/refresh token for
-// togglePlaybackRequestFunc to use to carry out the call to the Spotify
+// seekRequestFunc to use to carry out the call to the Spotify
 // Web API
 async function fetchAndRequest(
     platformInfo: any,
@@ -85,7 +87,7 @@ async function fetchAndRequest(
     let done: boolean = false;
     await DataHelper.fetchSpotifyTokens(platformInfo)
         .then(async (spotifyInfo) => {
-            await togglePlaybackRequest(platformInfo, spotifyInfo, rt)
+            await seekRequest(platformInfo, spotifyInfo, rt)
                 .then((res) => {
                     if (res.done) {
                         done = true;
@@ -101,11 +103,13 @@ async function fetchAndRequest(
     return done;
 }
 
-export async function togglePlayback(request_type: number, platformInfo: any) {
+export async function seek(request_type: number, platformInfo: any) {
     let status: MethodStatus = {
         done: undefined,
         message: undefined,
     };
+    let unsuccessful = "Unable to seek to position";
+    let successfull = "Succesfully seeked to position";
 
     await DataHelper.doesSessionExist(platformInfo)
         .then(async (res: MethodStatus) => {
@@ -123,36 +127,33 @@ export async function togglePlayback(request_type: number, platformInfo: any) {
                         ).catch((error) => console.log(error));
                     }
                     status.done = true;
-                    status.message =
-                        request_type == 1
-                            ? "Resumed playback for this session"
-                            : "Paused playback for the session.";
-                } catch (err) {
-                    if (err) status.done = false;
-                    status.message = `Unable to pause for all session members`;
+                    status.message = successfull;
+                } catch {
+                    status.done = false;
+                    status.message = unsuccessful;
                 }
             } else {
                 await fetchAndRequest(platformInfo, request_type)
                     .then((_res: any) => {
                         if (_res == true) {
                             status.done = true;
-                            status.message = `Paused playback`;
+                            status.message = successfull;
                         } else {
                             status.done = false;
-                            status.message = `Unable to pause playback`;
+                            status.message = unsuccessful;
                         }
                     })
                     .catch((error) => {
                         console.log(error);
                         status.done = false;
-                        status.message = `Unable to pause playback`;
+                        status.message = unsuccessful;
                     });
             }
         })
         .catch((error) => {
             console.log(error);
             status.done = false;
-            status.message = `Unable to pause`;
+            status.message = unsuccessful;
         });
 
     return status;

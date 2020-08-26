@@ -1,4 +1,4 @@
-import { playOrAddToQueue } from "../../../spotify/play_add2queue_track";
+import { playOrAddToQueue } from "../../../spotify/play_queue_track";
 
 module.exports = {
     name: "play",
@@ -9,6 +9,7 @@ module.exports = {
             discordUserId: message.member.id,
             discordServerId: message.guild.id,
         };
+
         if (typeof args != "undefined" && args.length >= 1) {
             await playOrAddToQueue(platformInfo, args[0])
                 .then(async (status: any) => {

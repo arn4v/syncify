@@ -1,6 +1,13 @@
 import { Session } from "./typeorm/entity/session.entity";
 import { User } from "./typeorm/entity/user.entity";
 import { createConnection, getConnection, Connection } from "typeorm";
+import { MethodStatus } from "../types/status";
+import { PlatformInfo } from "../types/platform_info";
+
+interface DeleteSessionParameters {
+    onStart?: boolean;
+    onCronJob?: boolean;
+}
 
 export class ORMHelper {
     private static _connection: any;
@@ -8,7 +15,7 @@ export class ORMHelper {
     /**
      * @returns Promise
      */
-    public static async connection() {
+    public static async connection(): Promise<Connection> {
         if (this._connection != null) return this._connection;
         this._connection = this.databaseConnection();
         return this._connection;
@@ -17,7 +24,7 @@ export class ORMHelper {
     /**
      * @returns Promise
      */
-    private static async databaseConnection() {
+    private static async databaseConnection(): Promise<Connection> {
         return await createConnection();
     }
 
@@ -30,7 +37,7 @@ export class ORMHelper {
     public static async addUser(
         spotifyAccessToken: string,
         spotifyRefreshToken: string,
-        platformInfo: any
+        platformInfo: PlatformInfo
     ) {
         let connection = getConnection();
         const platform = platformInfo.type;
@@ -170,14 +177,17 @@ export class ORMHelper {
 
     public static async createSession(platformInfo: any) {
         let connection = getConnection();
-        var res;
         let type: number = platformInfo.type;
         let userId: string =
             type == 1
                 ? platformInfo.discordUserId
                 : platformInfo.telegramUserId;
-        let sessionId;
         let createSession = async () => {
+            let _status: MethodStatus = {
+                done: undefined,
+                message: undefined,
+                data: undefined,
+            };
             let session = new Session();
             session.platform = type;
             session.platformGroupId =
@@ -187,23 +197,30 @@ export class ORMHelper {
             session.createdBy = userId;
             session.members = JSON.stringify([userId]);
             session.admins = JSON.stringify([userId]);
-            session.queue = JSON.stringify([]);
+            session.playInstant = true;
 
-            let sessionId;
-
+            //
             // ALWAYS USE AWAIT WITH WHEN CONNECTION IS BEING FETCHED USING
             // getConnection()
+            //
             await connection.manager
                 .save(session)
-                .then(async () => {
-                    res = "Created session";
-                    sessionId = session.sessionId;
-                    console.log(`Creating session ${sessionId}`);
+                .then(async (_session) => {
+                    _status.done = true;
+                    _status.message = "Created session";
+                    _status.data = { sessionId: _session.sessionId };
                 })
                 .catch((error: object) => {
-                    res = "Error creating message session";
+                    _status.done = false;
+                    _status.message = "Error creating message session";
                     console.log("ERROR: ORMHelper.createsession: ", error);
                 });
+            return _status;
+        };
+
+        let status: MethodStatus = {
+            done: undefined,
+            message: undefined,
         };
 
         await connection
@@ -216,13 +233,17 @@ export class ORMHelper {
                             : platformInfo.telegramGroupId,
                 },
             })
-            .then(async (data?: object) => {
+            .then(async (data: any) => {
                 if (data == undefined) {
                     await createSession()
-                        .then((sessionId) => {
-                            res = "Created session";
+                        .then((_status: MethodStatus) => {
+                            console.log(_status);
+                            if (_status.done == true) {
+                                console.log(_status);
+                                status = _status;
+                            }
                             console.log(
-                                `Successfully created session ${sessionId}`
+                                `Successfully created session ${status.data.sessionId}`
                             );
                         })
                         .catch((error) =>
@@ -231,7 +252,8 @@ export class ORMHelper {
                             )
                         );
                 } else {
-                    res = "A session already exists here";
+                    status.done = false;
+                    status.message = "A session already exists here";
                     console.log(
                         `LOG: createSession: A session already exists in this server/group`
                     );
@@ -239,13 +261,14 @@ export class ORMHelper {
             })
             .catch((error: object) => {
                 console.log("ERROR: createSession: ", error);
-                res = "unable to create session";
+                status.done = false;
+                status.message = "Unable to create session";
                 // createSession();
             });
-        return res;
+        return status;
     }
 
-    public static async joinSession(platformInfo: any): Promise<string> {
+    public static async joinSession(platformInfo: any): Promise<MethodStatus> {
         let connection: Connection = getConnection();
         const platform = platformInfo.type;
         const userId =
@@ -256,7 +279,10 @@ export class ORMHelper {
             platformInfo.type == 1
                 ? platformInfo.discordServerId
                 : platformInfo.telegramGroupId;
-        let message: string;
+        let status: MethodStatus = {
+            done: undefined,
+            message: undefined,
+        };
 
         await connection
             .getRepository(Session)
@@ -277,11 +303,9 @@ export class ORMHelper {
                                 session.members = JSON.stringify(members);
                                 await connection.manager
                                     .save(session)
-                                    .then(() => {
-                                        message =
-                                            "Successfully added " +
-                                            userId +
-                                            " to the session!";
+                                    .then((_session: any) => {
+                                        status.done = true;
+                                        status.message = `Added user ${userId} session ${_session.sessionId}`;
                                     })
                                     .catch((error: object) =>
                                         console.log(
@@ -290,10 +314,13 @@ export class ORMHelper {
                                         )
                                     );
                             } else {
-                                message = `You are already a part of this session`;
+                                status.done = false;
+                                status.message =
+                                    "You are already a part of this session";
                             }
                         } else {
-                            message =
+                            status.done = false;
+                            status.message =
                                 "Please register first. Unable to find you in database";
                         }
                     })
@@ -307,21 +334,27 @@ export class ORMHelper {
             .catch((error: object) => {
                 console.log(`ERROR: ORMHelper.joinSession: ${error}`);
             });
-        // @ts-ignore
-        return message;
+        return status;
     }
 
-    public static async doesSessionExist(platformInfo: any) {
+    public static async doesSessionExist(
+        platformInfo: any
+    ): Promise<MethodStatus> {
         let connection = getConnection();
         const platform: number = platformInfo.type;
         const groupId: string =
             platform == 1
                 ? platformInfo.discordServerId
                 : platformInfo.telegramGroupId;
-        let sessionInfo: any = {
-            status: undefined,
+
+        let status: MethodStatus = {
+            done: undefined,
+            message: undefined,
             data: undefined,
         };
+        let exists: string = "Session already exists in this group/server";
+        let doesNotExist: string = "Please create a session first";
+
         await connection
             .getRepository(Session)
             .findOne({
@@ -331,17 +364,48 @@ export class ORMHelper {
             })
             .then((session) => {
                 if (typeof session != "undefined") {
-                    sessionInfo.status = 200;
-                    sessionInfo.data = session;
+                    status.done = true;
+                    status.message = exists;
+                    status.data = session;
                 } else {
-                    sessionInfo.status = 400;
+                    status.done = false;
+                    status.message = doesNotExist;
                 }
             })
             .catch((error) => {
-                if (error != null) sessionInfo.status = false;
+                if (error != null) status.done = false;
             });
-        // @ts-ignore
-        return sessionInfo;
+        return status;
+    }
+
+    public static async updatePlayInstantStatus(platformInfo: any) {
+        let connection: Connection = getConnection();
+        const platform: number = platformInfo.type;
+        const groupId: string =
+            platform == 1
+                ? platformInfo.discordServerId
+                : platformInfo.telegramGroupId;
+        let status: any = {
+            done: undefined,
+            message: undefined,
+        };
+        await connection
+            .getRepository(Session)
+            .findOne({ where: { platformGroupId: groupId } })
+            .then(async (session: any) => {
+                session.playInstant =
+                    session.playInstant == true ? false : true;
+                connection.manager.save(session).then(() => {
+                    status.done = true;
+                    status.message = "Updated status";
+                });
+            })
+            .catch((error: string) => {
+                status.done = false;
+                status.message = "Unable to update status";
+                console.log(`ERROR: updatePlayInstanceStatus:391: ${error}`);
+            });
+        return status;
     }
 
     public static async addToSessionQueue(platformInfo: any, trackUri: string) {
@@ -388,6 +452,55 @@ export class ORMHelper {
             status.message = "Passed URI less than 22 characters";
         }
         // @ts-ignore
+        return status;
+    }
+
+    static async deleteSessions({
+        onStart,
+        onCronJob,
+    }: DeleteSessionParameters) {
+        let connection: Connection = await this.connection();
+        let sessionRepository = connection.getRepository(Session);
+        let status: any = {
+            done: undefined,
+            message: undefined,
+        };
+
+        sessionRepository
+            .find()
+            .then((sessions: any) => {
+                sessions.forEach((session: any) => {
+                    if (onStart) {
+                        connection
+                            .createQueryBuilder()
+                            .delete()
+                            .from(Session)
+                            .where("sessionId = :sessionId", {
+                                sessionId: session.sessionId,
+                            })
+                            .execute();
+                    } else if (onCronJob) {
+                        if (session.updatedOn) {
+                        }
+                    }
+                });
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+        // connection
+        //     .getRepository(Session)
+        //     .remove([])
+        //     .then(() => {
+        //         status.done = true;
+        //         status.message = "Deleted all entries in Session table.";
+        //         console.log(status.message);
+        //     })
+        //     .catch((error: string) => {
+        //         status.done = false;
+        //         status.message = error;
+        //         console.log(status.message);
+        //     });
         return status;
     }
 }

@@ -1,4 +1,4 @@
-import { resumePausePlayback } from "../../../spotify/toggle_playback";
+import { togglePlayback } from "../../../spotify/toggle_playback";
 import { getTrackInfo } from "../../../spotify/track_info";
 
 module.exports = {
@@ -11,7 +11,7 @@ module.exports = {
             discordServerId: message.guild.id,
         };
 
-        await resumePausePlayback(1, platformInfo)
+        await togglePlayback(1, platformInfo)
             .then(async (status: any) => {
                 if (status.done) {
                     await getTrackInfo(platformInfo)

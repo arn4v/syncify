@@ -9,11 +9,6 @@ import { ORMHelper } from "./orm_helper";
 export class DataHelper {
     constructor() {}
 
-    /**
-     * @param  {string} spotifyAccessToken
-     * @param  {string} spotifyRefreshToken
-     * @param  {any} platformInfo
-     */
     public static addUser(
         spotifyAccessToken: string,
         spotifyRefreshToken: string,
@@ -49,7 +44,7 @@ export class DataHelper {
         return ORMHelper.doesSessionExist(platformInfo);
     }
 
-    public static addToSessionQueue(platformInfo: any, trackUri: string) {
-        return ORMHelper.addToSessionQueue(platformInfo, trackUri);
+    public static updatePlayInstantStatus(platformInfo: any) {
+        return ORMHelper.updatePlayInstantStatus(platformInfo);
     }
 }

@@ -1,4 +1,5 @@
 import { DataHelper } from "../../../data/data_helper";
+import { MethodStatus } from "../../../types/status";
 
 module.exports = {
     name: "create",
@@ -11,8 +12,8 @@ module.exports = {
         };
 
         await DataHelper.createSession(platformInfo)
-            .then((res: any) => {
-                message.reply(res).catch(console.error);
+            .then((res: MethodStatus) => {
+                message.reply(res.message).catch(console.error);
             })
             .catch(() =>
                 console.log("ERROR: discord/commands/createsession.ts")

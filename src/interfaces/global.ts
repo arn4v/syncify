@@ -18,3 +18,16 @@ export interface MethodStatus {
     data?: any;
     rawData?: any;
 }
+
+export interface SessionInfo {
+    id: string | undefined;
+    platform: number | undefined;
+    groupId: string | undefined;
+    members?: string[] | undefined;
+}
+
+export interface UserInfo {
+    exists?: boolean;
+    inSession?: boolean;
+    sessionInfo?: SessionInfo;
+}

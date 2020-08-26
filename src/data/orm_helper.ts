@@ -1,7 +1,18 @@
 import { Session } from "./typeorm/entity/session.entity";
-import { MethodStatus, SpotifyInfo, PlatformInfo } from "../interfaces/global";
 import { User } from "./typeorm/entity/user.entity";
-import { createConnection, getConnection, Connection } from "typeorm";
+import {
+    Connection,
+    Repository,
+    createConnection,
+   getConnection,
+} from "typeorm";
+import {
+    MethodStatus,
+    PlatformInfo,
+    SessionInfo,
+    SpotifyInfo,
+    UserInfo,
+} from "../interfaces/global";
 
 interface DeleteSessionParameters {
     onStart?: boolean;
@@ -71,9 +82,8 @@ export class ORMHelper {
                         ? { discordUserId: userId }
                         : { telegramUserId: userId },
             })
-            // @ts-expect-error
-            .then((data: object) => {
-                if (data == undefined) {
+            .then((user?: User) => {
+                if (user == undefined) {
                     addUser();
                 } else {
                     console.log(
@@ -88,16 +98,15 @@ export class ORMHelper {
 
     public static async doesUserExist(
         platformInfo: PlatformInfo
-    ): Promise<MethodStatus> {
+    ): Promise<UserInfo> {
         let connection: Connection = getConnection();
         let platform = platformInfo.type;
         let userId =
             platform == 1
                 ? platformInfo.discordUserId
                 : platformInfo.telegramUserId;
-        let status: MethodStatus = {
-            done: undefined,
-        };
+
+        let userInfo: UserInfo = {};
 
         await connection
             .getRepository(User)
@@ -107,15 +116,25 @@ export class ORMHelper {
                         ? { discordUserId: userId }
                         : { telegramUserId: userId },
             })
-            .then((data?: object) => {
-                if (data == undefined) {
-                    status.done = false;
+            .then(async (user?: User) => {
+                if (user !== undefined) {
+                    userInfo.exists = true;
+                    await this.isUserInSession(platformInfo).then(
+                        async (res: MethodStatus) => {
+                            if (res.done) {
+                                userInfo.inSession = true;
+                                userInfo.sessionInfo = res.data;
+                            } else {
+                                userInfo.inSession = false;
+                            }
+                        }
+                    );
                 } else {
-                    status.done = true;
+                    userInfo.exists = false;
                 }
             })
             .catch(console.error);
-        return status;
+        return userInfo;
     }
 
     public static async fetchSpotifyTokens(
@@ -226,51 +245,56 @@ export class ORMHelper {
         };
 
         await this.doesUserExist(platformInfo)
-            .then(async (status: MethodStatus) => {
-                if (status.done) {
-                    await connection
-                        .getRepository(Session)
-                        .findOne({
-                            where: {
-                                platformGroupId:
-                                    platformInfo.type == 1
-                                        ? platformInfo.discordServerId
-                                        : platformInfo.telegramGroupId,
-                            },
-                        })
-                        .then(async (data: any) => {
-                            if (data == undefined) {
-                                await createSession()
-                                    .then((_status: MethodStatus) => {
-                                        console.log(_status);
-                                        if (_status.done == true) {
+            .then(async (userInfo: UserInfo) => {
+                if (userInfo.exists) {
+                    if (!userInfo.inSession) {
+                        await connection
+                            .getRepository(Session)
+                            .findOne({
+                                where: {
+                                    platformGroupId:
+                                        platformInfo.type == 1
+                                            ? platformInfo.discordServerId
+                                            : platformInfo.telegramGroupId,
+                                },
+                            })
+                            .then(async (data: any) => {
+                                if (data == undefined) {
+                                    await createSession()
+                                        .then((_status: MethodStatus) => {
                                             console.log(_status);
-                                            status = _status;
-                                        }
-                                        console.log(
-                                            `Successfully created session ${status.data.sessionId}`
+                                            if (_status.done == true) {
+                                                console.log(_status);
+                                                status = _status;
+                                            }
+                                            console.log(
+                                                `Successfully created session ${status.data.sessionId}`
+                                            );
+                                        })
+                                        .catch((error) =>
+                                            console.log(
+                                                `ERROR: ORMHelper.createSession: ${error}`
+                                            )
                                         );
-                                    })
-                                    .catch((error) =>
-                                        console.log(
-                                            `ERROR: ORMHelper.createSession: ${error}`
-                                        )
+                                } else {
+                                    status.done = false;
+                                    status.message =
+                                        "A session already exists here";
+                                    console.log(
+                                        `LOG: createSession: A session already exists in this server/group`
                                     );
-                            } else {
+                                }
+                            })
+                            .catch((error: object) => {
+                                console.log("ERROR: createSession: ", error);
                                 status.done = false;
-                                status.message =
-                                    "A session already exists here";
-                                console.log(
-                                    `LOG: createSession: A session already exists in this server/group`
-                                );
-                            }
-                        })
-                        .catch((error: object) => {
-                            console.log("ERROR: createSession: ", error);
-                            status.done = false;
-                            status.message = "Unable to create session";
-                            // createSession();
-                        });
+                                status.message = "Unable to create session";
+                                // createSession();
+                            });
+                    } else {
+                        status.done = false;
+                        status.message = "You're already in a session";
+                    }
                 } else {
                     status.done = false;
                     status.message = "Please register first.";
@@ -301,55 +325,58 @@ export class ORMHelper {
             message: undefined,
         };
 
-        await connection
-            .getRepository(Session)
-            .findOne({
-                where: {
-                    platformGroupId: groupId,
-                },
-            })
-            .then(async (session?: object) => {
-                await this.doesUserExist(platformInfo)
-                    .then(async (res) => {
-                        if (res) {
-                            // @ts-expect-error
-                            let members = JSON.parse(session.members);
-                            if (!members.includes(userId)) {
-                                members.push(userId);
-                                // @ts-expect-error
-                                session.members = JSON.stringify(members);
-                                await connection.manager
-                                    .save(session)
-                                    .then((_session: any) => {
-                                        status.done = true;
-                                        status.message = `Added user ${userId} session ${_session.sessionId}`;
-                                    })
-                                    .catch((error: object) =>
-                                        console.log(
-                                            `ERROR: joinSession: L263 unable to save sessions`,
-                                            error
-                                        )
-                                    );
-                            } else {
+        await this.doesUserExist(platformInfo)
+            .then(async (res: UserInfo) => {
+                if (res.exists) {
+                    if (!res.inSession) {
+                        await connection
+                            .getRepository(Session)
+                            .findOne({
+                                where: {
+                                    platformGroupId: groupId,
+                                },
+                            })
+                            .then(async (session: any) => {
+                                let members = JSON.parse(session.members);
+                                if (!members.includes(userId)) {
+                                    members.push(userId);
+                                    session.members = JSON.stringify(members);
+                                    await connection.manager
+                                        .save(session)
+                                        .then((_session: any) => {
+                                            status.done = true;
+                                            status.message = `Added user ${userId} session ${_session.sessionId}`;
+                                        })
+                                        .catch((error: object) =>
+                                            console.log(
+                                                `ERROR: joinSession: L263 unable to save sessions`,
+                                                error
+                                            )
+                                        );
+                                } else {
+                                    status.done = false;
+                                    status.message =
+                                        "You are already a part of this session";
+                                }
+                            })
+                            .catch((error) => {
                                 status.done = false;
-                                status.message =
-                                    "You are already a part of this session";
-                            }
-                        } else {
-                            status.done = false;
-                            status.message =
-                                "Please register first. Unable to find you in database";
-                        }
-                    })
-                    .catch((error: object) =>
-                        console.log(
-                            `ERROR: joinSession: doesUserExist Catch Block`,
-                            error
-                        )
-                    );
+                                status.message = "Unable to find a session";
+                                status.error = error;
+                            });
+                    } else {
+                        status.done = false;
+                        status.message = "You're already in a sesssion";
+                    }
+                } else {
+                    status.done = false;
+                    status.message =
+                        "Unable to find you in database, please register first";
+                }
             })
-            .catch((error: object) => {
-                console.log(`ERROR: ORMHelper.joinSession: ${error}`);
+            .catch(() => {
+                status.done = false;
+                status.message = "Unable to add user to session";
             });
         return status;
     }
@@ -516,6 +543,52 @@ export class ORMHelper {
         //         status.message = error;
         //         console.log(status.message);
         //     });
+        return status;
+    }
+
+    static async isUserInSession(
+        platformInfo: PlatformInfo
+    ): Promise<MethodStatus> {
+        const connection: Connection = getConnection();
+        const sessionRepository: Repository<Session> = connection.getRepository(
+            Session
+        );
+
+        let status: MethodStatus = {
+            done: false,
+            data: undefined,
+        };
+
+        let sessionInfo: SessionInfo = {
+            id: undefined,
+            platform: undefined,
+            groupId: undefined,
+        };
+
+        await sessionRepository
+            .find()
+            .then(async (sessions: Session[]) => {
+                let member: string = (platformInfo.type == 1
+                    ? platformInfo.discordUserId
+                    : platformInfo.telegramUserId) as string;
+                for (const session of sessions) {
+                    let members: string[] = JSON.parse(session.members);
+                    if (members.includes(member)) {
+                        sessionInfo.id = session.sessionId;
+                        sessionInfo.platform = session.platform;
+                        sessionInfo.groupId = session.platformGroupId;
+                        sessionInfo.members = members;
+                        status.done = true;
+                        status.data = sessionInfo;
+                        break;
+                    }
+                }
+            })
+            .catch(() => {
+                status.done = false;
+                status.message = "Unable to get User's sessions status";
+                status.data = undefined;
+            });
         return status;
     }
 }

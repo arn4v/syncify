@@ -11,7 +11,7 @@ module.exports = {
         };
 
         if (typeof args != "undefined" && args.length >= 1) {
-            await playOrAddToQueue(platformInfo, args[0])
+            await playOrAddToQueue(platformInfo, args)
                 .then(async (status: any) => {
                     message.reply(status.message);
                 })

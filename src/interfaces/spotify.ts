@@ -5,10 +5,17 @@ export interface Artist {
 }
 
 export interface Track {
-    name: string | undefined;
     id: string | undefined;
-    link: string | undefined;
+    name?: string | undefined;
+    link?: string | undefined;
     uri: string | undefined;
+    artists?: Artist[] | undefined;
     position?: number;
-    artists: Artist[] | undefined;
 }
+
+export interface PlaylistInfo {
+    id: string;
+    items: Track[];
+}
+
+export interface AlbumInfo extends PlaylistInfo {}

@@ -4,7 +4,9 @@ import {
     Connection,
     Repository,
     createConnection,
-   getConnection,
+    getConnection,
+    getConnectionOptions,
+    ConnectionOptions,
 } from "typeorm";
 import {
     MethodStatus,
@@ -35,7 +37,11 @@ export class ORMHelper {
      * @returns Promise
      */
     private static async databaseConnection(): Promise<Connection> {
-        return await createConnection();
+        let options: ConnectionOptions = {
+            ...(await getConnectionOptions()),
+            entities: [User, Session],
+        };
+        return await createConnection(options);
     }
 
     /**
@@ -226,15 +232,19 @@ export class ORMHelper {
             //
             await connection.manager
                 .save(session)
-                .then(async (_session) => {
+                .then(async (_session: Session) => {
                     _status.done = true;
-                    _status.message = "Created session";
+                    _status.message = `Created session. Use ${
+                        platform == 1
+                            ? (process.env.DISCORD_BOT_PREFIX as string) ?? "!"
+                            : "/"
+                    }session to get more info.`;
                     _status.data = { sessionId: _session.sessionId };
                 })
-                .catch((error: object) => {
+                .catch((error) => {
                     _status.done = false;
                     _status.message = "Error creating message session";
-                    console.log("ERROR: ORMHelper.createsession: ", error);
+                    console.log("ERROR: ORMHelper.createsession:243 - ", error);
                 });
             return _status;
         };
@@ -258,24 +268,25 @@ export class ORMHelper {
                                             : platformInfo.telegramGroupId,
                                 },
                             })
-                            .then(async (data: any) => {
-                                if (data == undefined) {
+                            .then(async (session?: Session) => {
+                                if (typeof session == "undefined") {
                                     await createSession()
                                         .then((_status: MethodStatus) => {
-                                            console.log(_status);
                                             if (_status.done == true) {
-                                                console.log(_status);
-                                                status = _status;
+                                                console.log(
+                                                    `Successfully created session ${_status.data.sessionId}`
+                                                );
                                             }
-                                            console.log(
-                                                `Successfully created session ${status.data.sessionId}`
-                                            );
+                                            status.done = _status.done;
+                                            status.message = _status.message;
+                                            status.data = _status.data;
                                         })
-                                        .catch((error) =>
+                                        .catch((error) => {
+                                            console.log(error);
                                             console.log(
                                                 `ERROR: ORMHelper.createSession: ${error}`
-                                            )
-                                        );
+                                            );
+                                        });
                                 } else {
                                     status.done = false;
                                     status.message =
@@ -344,6 +355,7 @@ export class ORMHelper {
                                     await connection.manager
                                         .save(session)
                                         .then((_session: any) => {
+                                            console.log(_session);
                                             status.done = true;
                                             status.message = `Added user ${userId} session ${_session.sessionId}`;
                                         })
@@ -406,7 +418,7 @@ export class ORMHelper {
                     platformGroupId: groupId,
                 },
             })
-            .then((session) => {
+            .then((session?: Session) => {
                 if (typeof session != "undefined") {
                     status.done = true;
                     status.message = exists;
@@ -589,6 +601,50 @@ export class ORMHelper {
                 status.message = "Unable to get User's sessions status";
                 status.data = undefined;
             });
+        return status;
+    }
+
+    static async getSessionInfo(
+        platformInfo: PlatformInfo
+    ): Promise<MethodStatus> {
+        let status: MethodStatus = {
+            done: false,
+            message: undefined,
+        };
+        let sessionInfo: SessionInfo = {
+            id: undefined,
+            platform: platformInfo.type,
+            groupId:
+                platformInfo.type == 1
+                    ? platformInfo.discordServerId
+                    : platformInfo.telegramGroupId,
+        };
+
+        const sessionRepository: Repository<Session> = getConnection().getRepository(
+            Session
+        );
+
+        await sessionRepository
+            .findOne({
+                where: {
+                    platformGroupId:
+                        platformInfo.type == 1
+                            ? platformInfo.discordServerId
+                            : platformInfo.telegramGroupId,
+                },
+            })
+            .then((session?: Session) => {
+                sessionInfo.id = session?.sessionId;
+                sessionInfo.members = JSON.parse(session?.members as string);
+                status.done = true;
+                status.message = "Successfully fetched session info.";
+                status.data = sessionInfo;
+            })
+            .catch((error) => {
+                status.done = false;
+                status.error = error;
+            });
+
         return status;
     }
 }

@@ -1,31 +1,57 @@
-export function trackLinkValidator(link: string) {
-    let status: any = {
-        statusText: undefined,
-        valid: undefined,
-        link: undefined,
-    };
+import { MethodStatus } from "../interfaces/global";
 
-    if (link.includes("spotify")) {
-        if (link.includes("open.spotify.com")) {
-            status.valid = true;
-            status.statusText = "Converted link to valid spotify URI";
-            status.link =
-                "spotify:track:" +
-                link
-                    .slice(link.indexOf("track/"))
-                    .split("?")[0]
-                    .replace("track/", "");
-        } else if (link.includes("spotify:track")) {
-            status.valid = true;
-            status.statusText = "Passed link is already a URI";
-            status.link = link;
-        }
-    } else {
-        status.done = false;
-        status.statusText = "Link doesn' contain 'spotify'";
-        status.link = link;
+function link2UriParser(link: string, type: number): string {
+    let typeString: string;
+    switch (type) {
+        case 1:
+            typeString = "track";
+            break;
+        case 2:
+            typeString = "album";
+            break;
+        case 3:
+            typeString = "playlist";
+            break;
+        default:
+            typeString = "track";
+            break;
     }
 
-    console.log(status.link);
+    return link.includes("open.spotify.com")
+        ? `spotify:${typeString}:` +
+              link
+                  .slice(link.indexOf(`${typeString}/`))
+                  .split("?")[0]
+                  .replace(`${typeString}/`, "")
+        : link.includes(`spotify:${typeString}`)
+        ? link
+        : "";
+}
+
+export function trackLinkValidator(links: string[]): MethodStatus {
+    let status: MethodStatus = {
+        done: false,
+        data: { uris: undefined },
+    };
+    let tracks: string[] = [];
+
+    if (links.length >= 1) {
+        for (const link of links) {
+            if (link.includes("spotify")) {
+                if (link.includes("track")) {
+                    let uri: string = link2UriParser(link, 1);
+                    if (uri.includes("spotify:")) tracks.push(uri);
+                } else if (link.includes("album")) {
+                    let uri: string = link2UriParser(link, 2);
+                    if (uri.includes("spotify:")) tracks.push(uri);
+                } else if (link.includes("playlist")) {
+                    let uri: string = link2UriParser(link, 3);
+                    if (uri.includes("spotify:")) tracks.push(uri);
+                }
+            }
+        }
+        status.data.uris = tracks;
+    }
+    if (tracks.length >= 1) status.done = true;
     return status;
 }

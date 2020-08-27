@@ -42,7 +42,7 @@ export class DataHelper {
     }
 
     public static doesUserExist(platformInfo: PlatformInfo) {
-        return ORMHelper.doesSessionExist(platformInfo);
+        return ORMHelper.doesUserExist(platformInfo);
     }
 
     public static doesSessionExist(platformInfo: PlatformInfo) {

@@ -2,7 +2,26 @@ import axios from "axios";
 import { DataHelper } from "../data/data_helper";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
-import { MethodStatus, PlatformInfo, SpotifyInfo } from "../interfaces/global";
+import {
+    MethodStatus,
+    PlatformInfo,
+    SpotifyInfo,
+    UserInfo,
+} from "../interfaces/global";
+
+// Template
+// await DataHelper.doesUserExist(platformInfo)
+//     .then(async (user?: UserInfo) => {
+//         if (user?.exists) {
+//         } else {
+//             status.done = false;
+//             status.message = "Please register first.";
+//         }
+//     })
+//     .catch(() => {
+//         status.done = false;
+//         status.message = unsuccessful_message;
+//     });
 
 /**
     This function exists purely to be used by other Spotify methods in this
@@ -14,7 +33,7 @@ import { MethodStatus, PlatformInfo, SpotifyInfo } from "../interfaces/global";
 export async function togglePlaybackRequest(
     platformInfo: PlatformInfo,
     spotifyInfo: SpotifyInfo,
-    request_type: number
+    requestType: number
 ): Promise<MethodStatus> {
     let status: MethodStatus = {
         done: undefined,
@@ -22,19 +41,15 @@ export async function togglePlaybackRequest(
     };
 
     const request_url: string =
-        request_type == 1
+        requestType == 1
             ? endpoints.resume_playback.url
             : endpoints.pause_playback.url;
-
-    let access_token: string | undefined =
-        spotifyInfo.spotifyAccessToken ?? undefined;
-    let new_access_token: string;
 
     await axios({
         url: request_url,
         method: "put",
         headers: {
-            Authorization: "Bearer " + access_token,
+            Authorization: "Bearer " + spotifyInfo.spotifyAccessToken,
         },
     })
         .then((res) => {
@@ -43,14 +58,16 @@ export async function togglePlaybackRequest(
         .catch(async (error) => {
             if (error.response.status == 401) {
                 await refreshAccessToken(spotifyInfo.spotifyRefreshToken).then(
-                    async (data: any) => {
-                        new_access_token = data;
-                        DataHelper.updateSpotifyAccessToken(data, platformInfo);
+                    async (newAccessToken: any) => {
+                        DataHelper.updateSpotifyAccessToken(
+                            newAccessToken,
+                            platformInfo
+                        );
                         await axios({
                             url: request_url,
                             method: "put",
                             headers: {
-                                Authorization: "Bearer " + new_access_token,
+                                Authorization: "Bearer " + newAccessToken,
                             },
                         })
                             .then((_res) => {
@@ -71,6 +88,7 @@ export async function togglePlaybackRequest(
                     `ERROR: SpotifyHelper.resumePlayback: ${error.response.status}`
                 );
                 status.done = false;
+                status.error = error;
             }
         });
     return status;
@@ -85,9 +103,9 @@ async function fetchAndRequest(
 ): Promise<boolean> {
     let done: boolean = false;
     await DataHelper.fetchSpotifyTokens(platformInfo)
-        .then(async (spotifyInfo) => {
+        .then(async (spotifyInfo: SpotifyInfo) => {
             await togglePlaybackRequest(platformInfo, spotifyInfo, rt)
-                .then((res) => {
+                .then((res: MethodStatus) => {
                     if (res.done) {
                         done = true;
                     } else {
@@ -102,58 +120,87 @@ async function fetchAndRequest(
     return done;
 }
 
-export async function togglePlayback(request_type: number, platformInfo: any) {
+export async function togglePlayback(
+    requestType: number,
+    platformInfo: any
+): Promise<MethodStatus> {
     let status: MethodStatus = {
         done: undefined,
         message: undefined,
     };
 
-    await DataHelper.doesSessionExist(platformInfo)
-        .then(async (res: MethodStatus) => {
-            if (res.done) {
-                let members: string[] = JSON.parse(res.data.members);
-                try {
-                    for (const member of members) {
-                        let platInfo = platformInfo;
-                        platInfo.type == 1
-                            ? (platInfo.discordUserId = member)
-                            : (platInfo.telegramUserId = member);
-                        await fetchAndRequest(
-                            platInfo,
-                            request_type
-                        ).catch((error) => console.log(error));
-                    }
-                    status.done = true;
-                    status.message =
-                        request_type == 1
-                            ? "Resumed playback for this session"
-                            : "Paused playback for the session.";
-                } catch (err) {
-                    if (err) status.done = false;
-                    status.message = `Unable to pause for all session members`;
-                }
-            } else {
-                await fetchAndRequest(platformInfo, request_type)
-                    .then((_res: any) => {
-                        if (_res == true) {
-                            status.done = true;
-                            status.message = `Paused playback`;
+    let successful_message =
+        requestType == 1 ? "Resumed playback." : "Paused playback.";
+    let unsuccessful_message =
+        requestType == 1
+            ? "Unable to resume playback."
+            : "Unable to pause playback.";
+    let successful_session_message =
+        requestType == 1
+            ? "Resumed playback for this session"
+            : "Paused playback for the session.";
+    let unsuccessful_session_message =
+        requestType == 1
+            ? "Unable to resume playback for session members"
+            : `Unable to pause for all session members`;
+
+    await DataHelper.doesUserExist(platformInfo)
+        .then(async (user?: UserInfo) => {
+            if (user?.exists) {
+                await DataHelper.doesSessionExist(platformInfo)
+                    .then(async (res: MethodStatus) => {
+                        if (res.done) {
+                            let members: string[] = JSON.parse(
+                                res.data.members
+                            );
+                            try {
+                                for (const member of members) {
+                                    let platInfo = platformInfo;
+                                    platInfo.type == 1
+                                        ? (platInfo.discordUserId = member)
+                                        : (platInfo.telegramUserId = member);
+                                    await fetchAndRequest(
+                                        platInfo,
+                                        requestType
+                                    ).catch((error) => console.log(error));
+                                }
+                                status.done = true;
+                                status.message = successful_session_message;
+                            } catch (err) {
+                                if (err) status.done = false;
+                                status.message = unsuccessful_session_message;
+                            }
                         } else {
-                            status.done = false;
-                            status.message = `Unable to pause playback`;
+                            await fetchAndRequest(platformInfo, requestType)
+                                .then((_res: boolean) => {
+                                    if (_res) {
+                                        status.done = true;
+                                        status.message = successful_message;
+                                    } else {
+                                        status.done = false;
+                                        status.message = unsuccessful_message;
+                                    }
+                                })
+                                .catch((error) => {
+                                    console.log(error);
+                                    status.done = false;
+                                    status.message = unsuccessful_message;
+                                });
                         }
                     })
                     .catch((error) => {
                         console.log(error);
                         status.done = false;
-                        status.message = `Unable to pause playback`;
+                        status.message = unsuccessful_message;
                     });
+            } else {
+                status.done = false;
+                status.message = "Please register first.";
             }
         })
-        .catch((error) => {
-            console.log(error);
+        .catch(() => {
             status.done = false;
-            status.message = `Unable to pause`;
+            status.message = unsuccessful_message;
         });
 
     return status;

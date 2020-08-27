@@ -1,5 +1,6 @@
 import { togglePlayback } from "../../../spotify/toggle_playback";
 import { getTrackInfo } from "../../../spotify/track_info";
+import { MethodStatus } from "../../../interfaces/global";
 
 module.exports = {
     name: "resume",
@@ -12,24 +13,8 @@ module.exports = {
         };
 
         await togglePlayback(1, platformInfo)
-            .then(async (status: any) => {
-                if (status.done) {
-                    await getTrackInfo(platformInfo)
-                        .then((response: any) => {
-                            message.channel.send(
-                                `> Resumed playing: ${response.name} by ${response.artists}`
-                            );
-                        })
-                        .catch((error: string) => {
-                            console.log(
-                                `LOG: discord/commands/track.ts: ${error}`
-                            );
-                        });
-                } else {
-                    message.channel.send(
-                        `> Spotify cannot find active devices.`
-                    );
-                }
+            .then(async (status: MethodStatus) => {
+                message.reply(status.message);
             })
             .catch((error: string) => message.reply(error));
     },

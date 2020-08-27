@@ -2,7 +2,7 @@ import axios from "axios";
 import { DataHelper } from "../data/data_helper";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
-import { MethodStatus } from "../interfaces/global";
+import { MethodStatus, UserInfo } from "../interfaces/global";
 
 async function nextPreviousTrackRequest(
     platformInfo: any,
@@ -11,7 +11,6 @@ async function nextPreviousTrackRequest(
     let status: MethodStatus = {
         done: false,
     };
-
     let new_access_token: string;
 
     await DataHelper.fetchSpotifyTokens(platformInfo)
@@ -87,8 +86,8 @@ export async function nextPreviousTrack(
     };
 
     await DataHelper.doesUserExist(platformInfo)
-        .then(async function (res: MethodStatus) {
-            if (res.done) {
+        .then(async (user: UserInfo) => {
+            if (user.exists && user.inSession) {
                 await DataHelper.doesSessionExist(platformInfo)
                     .then(async (_res: MethodStatus) => {
                         if (_res.done) {

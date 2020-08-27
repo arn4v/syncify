@@ -5,13 +5,17 @@ import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
 import { trackLinkValidator } from "../helpers/spotify_link_validator";
 import { getPlaylistOrAlbumItems } from "./playlist_helper";
+import {
+    toggleShuffleRepeat,
+    toggleShuffleRepeatRequest,
+} from "./toggle_shuffle_repeat";
 
 export async function addToQueue(
     platformInfo: any,
     trackUri: string
 ): Promise<boolean> {
     const request_url: string = endpoints.add_to_queue.url;
-    let _done: boolean;
+    let _done: boolean = false;
     let new_access_token: string;
     await DataHelper.fetchSpotifyTokens(platformInfo)
         .then(async (spotifyInfo: SpotifyInfo) => {
@@ -70,7 +74,6 @@ export async function addToQueue(
             console.log("ERROR: DataHelper.fetchSpotifyTokens: " + __error);
             _done = false;
         });
-    // @ts-ignore
     return _done;
 }
 
@@ -81,66 +84,79 @@ export async function playTrack(
     let new_access_token: string;
     let _done: boolean = false;
     const request_url: string = endpoints.play_track.url;
+
     await DataHelper.fetchSpotifyTokens(platformInfo)
         .then(async (spotifyInfo: SpotifyInfo) => {
             let access_token: string = spotifyInfo.spotifyAccessToken;
-            await axios({
-                url: request_url,
-                method: "put",
-                headers: {
-                    Authorization: "Bearer " + access_token,
-                    "Content-Type": "application/json",
-                },
-                data: {
-                    uris: tracks,
-                },
-            })
-                .then((res: any) => {
-                    console.log(res.config);
-                    res.status == 204 ? (_done = true) : (_done = false);
-                })
-                .catch(async (error) => {
-                    if (error.response.status == 401) {
-                        await refreshAccessToken(
-                            spotifyInfo.spotifyRefreshToken
-                        ).then(async (data: any) => {
-                            new_access_token = data;
-                            DataHelper.updateSpotifyAccessToken(
-                                data,
-                                platformInfo
-                            );
-                            await axios({
-                                url: request_url,
-                                method: "put",
-                                headers: {
-                                    Authorization: "Bearer " + new_access_token,
-                                },
-                                data: {
-                                    uris: [tracks[0]],
-                                },
-                            })
-                                .then((_res: any) => {
-                                    if (_res.status == 204) {
-                                        _done = true;
-                                    }
-                                })
-                                .catch((_error) =>
-                                    console.log(
-                                        "Error: resumePausePlayback: Second axios call: ",
-                                        _error
-                                    )
+
+            await toggleShuffleRepeatRequest(1, false, spotifyInfo)
+                .then(async () => {
+                    await axios({
+                        url: request_url,
+                        method: "put",
+                        headers: {
+                            Authorization: "Bearer " + access_token,
+                            "Content-Type": "application/json",
+                        },
+                        data: {
+                            uris: tracks,
+                        },
+                    })
+                        .then((res: any) => {
+                            console.log(res.config);
+                            res.status == 204
+                                ? (_done = true)
+                                : (_done = false);
+                        })
+                        .catch(async (error) => {
+                            if (error.response.status == 401) {
+                                await refreshAccessToken(
+                                    spotifyInfo.spotifyRefreshToken
+                                ).then(async (data: any) => {
+                                    new_access_token = data;
+                                    DataHelper.updateSpotifyAccessToken(
+                                        data,
+                                        platformInfo
+                                    );
+                                    await axios({
+                                        url: request_url,
+                                        method: "put",
+                                        headers: {
+                                            Authorization:
+                                                "Bearer " + new_access_token,
+                                        },
+                                        data: {
+                                            uris: [tracks[0]],
+                                        },
+                                    })
+                                        .then((_res: any) => {
+                                            if (_res.status == 204) {
+                                                _done = true;
+                                            }
+                                        })
+                                        .catch((_error) =>
+                                            console.log(
+                                                "Error: resumePausePlayback: Second axios call: ",
+                                                _error
+                                            )
+                                        );
+                                });
+                            } else {
+                                console.log(
+                                    `ERROR: play_queue_track:playTrack:136: ${error.response.status}`
                                 );
+                                _done = false;
+                            }
                         });
-                    } else {
-                        console.log(
-                            `ERROR: play_queue_track:playTrack:136: ${error.response.status}`
-                        );
-                        _done = false;
-                    }
+                })
+                .catch((__error) => {
+                    console.log(
+                        "ERROR: DataHelper.fetchSpotifyTokens: " + __error
+                    );
+                    _done = false;
                 });
         })
-        .catch((__error) => {
-            console.log("ERROR: DataHelper.fetchSpotifyTokens: " + __error);
+        .catch(() => {
             _done = false;
         });
     return _done;

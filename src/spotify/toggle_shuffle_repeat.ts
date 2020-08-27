@@ -4,7 +4,7 @@ import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_access_token";
 import { PlatformInfo, MethodStatus, SpotifyInfo } from "../interfaces/global";
 
-async function toggleShuffleRepeatRequest(
+export async function toggleShuffleRepeatRequest(
     requestType: number,
     toggleState: boolean | string,
     spotifyInfo: SpotifyInfo

@@ -1,19 +1,17 @@
 import { DataHelper } from "../data/data_helper";
-import { togglePlaybackRequest } from "./toggle_playback";
-import { trackInfoRequest } from "./track_info";
-import { seekRequest } from "./seek";
-import { MethodStatus, UserInfo } from "../interfaces/global";
+import { MethodStatus, UserInfo, PlatformInfo, SpotifyInfo } from "../interfaces/global";
 import { Track } from "../interfaces/spotify";
+import { RequestsHandler } from './requests_handler'
 
-async function getAdminTrackInfo(platformInfo: any) {
+async function getAdminTrackInfo(platformInfo: PlatformInfo) {
     let trackInfo: Track = Object();
     await DataHelper.fetchSpotifyTokens(platformInfo).then(
-        async (spotifyInfo: any) => {
-            await trackInfoRequest(platformInfo, spotifyInfo)
+        async (spotifyInfo: SpotifyInfo) => {
+            await RequestsHandler.trackInfo(platformInfo, spotifyInfo)
                 .then((status: MethodStatus) => {
                     trackInfo = status.data;
                 })
-                .catch((error) => {
+                .catch((error: Error) => {
                     console.log(error);
                 });
         }
@@ -48,8 +46,8 @@ export async function syncSession(platformInfo: any): Promise<MethodStatus> {
                                         await DataHelper.fetchSpotifyTokens(
                                             platInfo
                                         )
-                                            .then(async (spotifyInfo: any) => {
-                                                await togglePlaybackRequest(
+                                            .then(async (spotifyInfo: SpotifyInfo) => {
+                                                await RequestsHandler.togglePlayback(
                                                     platInfo,
                                                     spotifyInfo,
                                                     2
@@ -74,13 +72,10 @@ export async function syncSession(platformInfo: any): Promise<MethodStatus> {
                                     await getAdminTrackInfo(adminPlatInfo)
                                         .then(
                                             async (
-                                                trackInfo: Track | undefined
+                                                trackInfo: Track
                                             ) => {
                                                 if (trackInfo != undefined) {
-                                                    let position:
-                                                        | number
-                                                        | undefined =
-                                                        trackInfo.position;
+                                                    let position: number = trackInfo?.position as number;
                                                     for (const member of members) {
                                                         let platInfo = platformInfo;
                                                         platInfo.type == 1
@@ -92,14 +87,14 @@ export async function syncSession(platformInfo: any): Promise<MethodStatus> {
                                                         )
                                                             .then(
                                                                 async (
-                                                                    spotifyInfo: any
+                                                                    spotifyInfo: SpotifyInfo
                                                                 ) => {
-                                                                    await seekRequest(
+                                                                    await RequestsHandler.seek(
                                                                         platInfo,
                                                                         spotifyInfo,
                                                                         position
                                                                     );
-                                                                    await togglePlaybackRequest(
+                                                                    await RequestsHandler.togglePlayback(
                                                                         platInfo,
                                                                         spotifyInfo,
                                                                         1

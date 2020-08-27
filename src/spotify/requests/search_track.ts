@@ -1,9 +1,10 @@
 import axios from "axios";
 import { endpoints } from "./endpoints";
-import { DataHelper } from "../data/data_helper";
-import { refreshAccessToken } from "./refresh_access_token";
+import { DataHelper } from "../../data/data_helper";
+import { refreshAccessToken } from "./refresh_tokens";
+import {SpotifyInfo} from "../../interfaces/global";
 
-async function searchSpotify(platformInfo: any, query: string) {
+async function searchSpotify(platformInfo: SpotifyInfo, query: string) {
     let userId: string | undefined =
         platformInfo.type == 1
             ? platformInfo.discordUserId
@@ -37,8 +38,8 @@ async function searchSpotify(platformInfo: any, query: string) {
                         } else {
                             await refreshAccessToken(
                                 spotifyInfo?.spotifyRefreshToken
-                            ).then(async (new_access_token) => {
-                                await queryFunc(new_access_token)
+                            ).then(async (newAccessToken: string) => {
+                                await queryFunc(newAccessToken)
                                     .then(async (_res) => {})
                                     .catch((_error) => {});
                             });

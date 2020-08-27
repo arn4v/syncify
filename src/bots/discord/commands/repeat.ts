@@ -11,7 +11,7 @@ module.exports = {
             discordServerId: message.guild.id,
         };
 
-        await toggleShuffleRepeat(platformInfo, "track", 2)
+        await toggleShuffleRepeat(platformInfo, { toggleState: "track" }, 2)
             .then(async (res: MethodStatus) => {
                 if (status) {
                     message.reply(`Shuffled your queue`);

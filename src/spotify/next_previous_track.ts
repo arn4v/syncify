@@ -1,85 +1,12 @@
 import axios from "axios";
 import { DataHelper } from "../data/data_helper";
-import { endpoints } from "./endpoints";
-import { refreshAccessToken } from "./refresh_access_token";
 import { MethodStatus, UserInfo } from "../interfaces/global";
-
-async function nextPreviousTrackRequest(
-    platformInfo: any,
-    request_url: string
-): Promise<MethodStatus> {
-    let status: MethodStatus = {
-        done: false,
-    };
-    let new_access_token: string;
-
-    await DataHelper.fetchSpotifyTokens(platformInfo)
-        .then(async (spotifyInfo: any) => {
-            let access_token: string = spotifyInfo.spotifyAccessToken;
-            await axios({
-                url: request_url,
-                method: "post",
-                headers: {
-                    Authorization: "Bearer " + access_token,
-                },
-            })
-                .then((res) => {
-                    res.status == 204
-                        ? (status.done = true)
-                        : (status.done = false);
-                })
-                .catch(async (error) => {
-                    if (error.response.status == 401) {
-                        await refreshAccessToken(
-                            spotifyInfo.spotifyRefreshToken
-                        ).then(async (data: any) => {
-                            new_access_token = data;
-                            DataHelper.updateSpotifyAccessToken(
-                                data,
-                                platformInfo
-                            );
-                            await axios({
-                                url: request_url,
-                                method: "put",
-                                headers: {
-                                    Authorization: "Bearer " + new_access_token,
-                                },
-                            })
-                                .then((_res) => {
-                                    if (_res.status == 204) {
-                                        status.done = true;
-                                    }
-                                })
-                                .catch((_error) =>
-                                    console.log(
-                                        "Error: nextPreviousTrack: Second axios call: ",
-                                        _error
-                                    )
-                                );
-                        });
-                    } else {
-                        console.log(
-                            `ERROR: SpotifyHelper.resumePlayback: ${error.response.status}`
-                        );
-                        status.done = false;
-                    }
-                });
-        })
-        .catch((__error) =>
-            console.log("ERROR: DataHelper.fetchSpotifyTokens: " + __error)
-        );
-    return status;
-}
+import { RequestsHandler } from "./requests_handler";
 
 export async function nextPreviousTrack(
     platformInfo: any,
-    request_type: number
+    requestType: number
 ): Promise<MethodStatus> {
-    const request_url: string =
-        request_type == 1
-            ? endpoints.next_track.url
-            : endpoints.previous_track.url;
-
     let status: MethodStatus = {
         done: undefined,
         message: undefined,
@@ -100,14 +27,14 @@ export async function nextPreviousTrack(
                                     platInfo.type == 1
                                         ? (platInfo.discordUserId = member)
                                         : (platInfo.telegramUserId = member);
-                                    await nextPreviousTrackRequest(
+                                    await RequestsHandler.nextPreviousTrack(
                                         platInfo,
-                                        request_url
+                                        requestType
                                     )
                                         .then(() => {
                                             status.done = true;
                                             status.message =
-                                                request_type == 1
+                                                requestType == 1
                                                     ? "Skipped to next track for the session"
                                                     : "Went back to previous track for the session";
                                         })
@@ -119,15 +46,15 @@ export async function nextPreviousTrack(
                                     "Unable to skip track for the session";
                             }
                         } else {
-                            await nextPreviousTrackRequest(
+                            await RequestsHandler.nextPreviousTrack(
                                 platformInfo,
-                                request_url
+                                requestType
                             )
                                 .then((__res: MethodStatus) => {
                                     if (__res.done == true) {
                                         status.done = true;
                                         status.message =
-                                            request_type == 1
+                                            requestType == 1
                                                 ? "Skipped to next track."
                                                 : "Going back to previous track.";
                                     } else {

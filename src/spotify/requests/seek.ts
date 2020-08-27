@@ -1,8 +1,8 @@
 import axios from "axios";
-import { DataHelper } from "../data/data_helper";
+import { DataHelper } from "../../data/data_helper";
 import { endpoints } from "./endpoints";
-import { refreshAccessToken } from "./refresh_access_token";
-import { MethodStatus, PlatformInfo, SpotifyInfo } from "../interfaces/global";
+import { refreshAccessToken } from "./refresh_tokens";
+import { MethodStatus, PlatformInfo, SpotifyInfo } from "../../interfaces/global";
 
 export async function seekRequest(
     platformInfo: PlatformInfo,

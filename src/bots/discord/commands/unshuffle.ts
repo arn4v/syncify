@@ -11,7 +11,7 @@ module.exports = {
             discordServerId: message.guild.id,
         };
 
-        await toggleShuffleRepeat(platformInfo, false, 1)
+        await toggleShuffleRepeat(platformInfo, { toggleState: false }, 1)
             .then(async (res: MethodStatus) => {
                 if (res.done) {
                     message.reply(`Unshuffled your queue`);

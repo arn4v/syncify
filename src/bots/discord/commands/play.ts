@@ -11,7 +11,7 @@ module.exports = {
         };
 
         if (typeof args != "undefined" && args.length >= 1) {
-            if (args.includes("open.spotify.com" || "spotify:")) {
+            if (!args.includes("open.spotify.com" || "spotify:")) {
                 await playOrAddToQueue(platformInfo, args)
                     .then(async (status: any) => {
                         message.reply(status.message);

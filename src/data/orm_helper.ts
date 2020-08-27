@@ -339,15 +339,23 @@ export class ORMHelper {
         await this.doesUserExist(platformInfo)
             .then(async (res: UserInfo) => {
                 if (res.exists) {
-                    if (!res.inSession) {
-                        await connection
-                            .getRepository(Session)
-                            .findOne({
-                                where: {
-                                    platformGroupId: groupId,
-                                },
-                            })
-                            .then(async (session: any) => {
+                    await connection
+                        .getRepository(Session)
+                        .findOne({
+                            where: {
+                                platformGroupId: groupId,
+                            },
+                        })
+                        .then(async (session: any) => {
+                            if (res.inSession == session.sessionId) {
+                                status.done = true;
+                                status.message =
+                                    "You're already a part of this session.";
+                            } else if (res.inSession != session.sessionId) {
+                                status.done = false;
+                                status.message =
+                                    "You're already in a sesssion.";
+                            } else if (!res.inSession) {
                                 let members = JSON.parse(session.members);
                                 if (!members.includes(userId)) {
                                     members.push(userId);
@@ -365,21 +373,18 @@ export class ORMHelper {
                                                 error
                                             )
                                         );
-                                } else {
-                                    status.done = false;
-                                    status.message =
-                                        "You are already a part of this session";
                                 }
-                            })
-                            .catch((error) => {
-                                status.done = false;
-                                status.message = "Unable to find a session";
-                                status.error = error;
-                            });
-                    } else {
-                        status.done = false;
-                        status.message = "You're already in a sesssion";
-                    }
+                            }
+                            // } else {
+                            //     status.done = false;
+                            //     status.message =
+                            //         "You are already a part of this session";
+                        })
+                        .catch((error) => {
+                            status.done = false;
+                            status.message = "Unable to find a session";
+                            status.error = error;
+                        });
                 } else {
                     status.done = false;
                     status.message =
@@ -683,11 +688,13 @@ export class ORMHelper {
                 await connection.manager
                     .save(session)
                     .then((_res) => {
+                        console.log(_res);
                         status.done = true;
                         status.message = "You have left the session";
                         status.data = _res;
                     })
                     .catch((err) => {
+                        console.log("err");
                         status.done = false;
                         status.message = "Unable to leave session";
                         status.error = err;

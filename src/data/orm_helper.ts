@@ -474,7 +474,11 @@ export class ORMHelper {
             platform == 1
                 ? platformInfo.discordServerId
                 : platformInfo.telegramGroupId;
-        let status: MethodStatus = Object();
+        let status: MethodStatus = {
+            done: false,
+            message: undefined,
+            data: undefined,
+        };
         if (trackUri.length <= 36) {
             await connection
                 .getRepository(Session)
@@ -505,7 +509,6 @@ export class ORMHelper {
             status.done = false;
             status.message = "Passed URI less than 22 characters";
         }
-        // @ts-ignore
         return status;
     }
 
@@ -645,6 +648,56 @@ export class ORMHelper {
                 status.error = error;
             });
 
+        return status;
+    }
+
+    static async leaveSession(platformInfo: PlatformInfo) {
+        const connection: Connection = getConnection();
+        let status: MethodStatus = {
+            done: false,
+            message: undefined,
+            data: undefined,
+        };
+
+        await connection
+            .getRepository(Session)
+            .findOne({
+                where: {
+                    platformGroupID:
+                        platformInfo.type == 1
+                            ? platformInfo.discordUserId
+                            : platformInfo.telegramGroupId,
+                },
+            })
+            .then(async (session: any) => {
+                const members = JSON.parse(session?.members as string);
+                const filtered_members: string[] = members.filter(
+                    (user: string) => {
+                        user !==
+                            (platformInfo.type == 1
+                                ? platformInfo.discordUserId
+                                : platformInfo.telegramUserId);
+                    }
+                );
+                session.members = JSON.stringify(filtered_members);
+                await connection.manager
+                    .save(session)
+                    .then((_res) => {
+                        status.done = true;
+                        status.message = "You have left the session";
+                        status.data = _res;
+                    })
+                    .catch((err) => {
+                        status.done = false;
+                        status.message = "Unable to leave session";
+                        status.error = err;
+                    });
+            })
+            .catch((err) => {
+                status.done = false;
+                status.message = "Unable to leave session";
+                status.error = err;
+            });
         return status;
     }
 }

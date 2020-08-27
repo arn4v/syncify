@@ -41,6 +41,10 @@ export class DataHelper {
         return ORMHelper.joinSession(platformInfo);
     }
 
+    public static leaveSession(platformInfo: PlatformInfo) {
+        return ORMHelper.leaveSession(platformInfo);
+    }
+
     public static doesUserExist(platformInfo: PlatformInfo) {
         return ORMHelper.doesUserExist(platformInfo);
     }

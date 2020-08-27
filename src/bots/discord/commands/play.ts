@@ -11,11 +11,15 @@ module.exports = {
         };
 
         if (typeof args != "undefined" && args.length >= 1) {
-            await playOrAddToQueue(platformInfo, args)
-                .then(async (status: any) => {
-                    message.reply(status.message);
-                })
-                .catch((error: string) => message.reply(error));
+            if (args.includes("open.spotify.com" || "spotify:")) {
+                await playOrAddToQueue(platformInfo, args)
+                    .then(async (status: any) => {
+                        message.reply(status.message);
+                    })
+                    .catch((error: string) => message.reply(error));
+            } else {
+                message.reply("Invalid link provided");
+            }
         } else {
             message.reply("Please pass at least one argument");
         }

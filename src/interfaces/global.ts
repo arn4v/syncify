@@ -31,4 +31,3 @@ export interface UserInfo {
     inSession?: boolean;
     sessionInfo?: SessionInfo;
 }
-

@@ -1,6 +1,10 @@
 import axios from "axios";
 import { DataHelper } from "../../data/data_helper";
-import { MethodStatus, PlatformInfo, SpotifyInfo } from "../../interfaces/global";
+import {
+    MethodStatus,
+    PlatformInfo,
+    SpotifyInfo,
+} from "../../interfaces/global";
 import { refreshAccessToken } from "./refresh_tokens";
 import { endpoints } from "./endpoints";
 import { Track } from "../../interfaces/spotify";

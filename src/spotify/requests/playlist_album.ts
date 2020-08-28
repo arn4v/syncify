@@ -1,7 +1,7 @@
-import axios from 'axios'
+import axios from "axios";
 import { PlatformInfo, SpotifyInfo } from "../../interfaces/global";
-import { refreshAccessToken } from './refresh_tokens'
-import { DataHelper } from '../../data/data_helper'
+import { refreshAccessToken } from "./refresh_tokens";
+import { DataHelper } from "../../data/data_helper";
 
 export async function playlistAlbumItemsRequest(
     platformInfo: PlatformInfo,
@@ -15,7 +15,7 @@ export async function playlistAlbumItemsRequest(
             : uri.replace("spotify:playlist:", "");
     let requestUrl = `https://api.spotify.com/v1/${
         type == 1 ? "albums" : "playlists"
-        }/${id}/tracks`;
+    }/${id}/tracks`;
     let uris: string[] = [];
 
     await axios({

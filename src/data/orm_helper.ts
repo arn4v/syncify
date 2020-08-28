@@ -658,6 +658,9 @@ export class ORMHelper {
 
     static async leaveSession(platformInfo: PlatformInfo) {
         const connection: Connection = getConnection();
+        const userId: string = (platformInfo.type == 1
+            ? platformInfo.discordUserId
+            : platformInfo.telegramUserId) as string;
         let status: MethodStatus = {
             done: false,
             message: undefined,

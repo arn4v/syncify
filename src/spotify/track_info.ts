@@ -1,7 +1,7 @@
 import axios from "axios";
 import { DataHelper } from "../data/data_helper";
 import { MethodStatus } from "../interfaces/global";
-import { Track, Artist } from '../interfaces/spotify'
+import { Track, Artist } from "../interfaces/spotify";
 import { RequestsHandler } from "./requests_handler";
 
 async function fetchAndRequest(platformInfo: any): Promise<MethodStatus> {

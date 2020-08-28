@@ -104,13 +104,10 @@ router.get("/callback", function (req: any, res: any) {
                     });
                 }
                 res.redirect(
-                    "/#" +
-                        qs.stringify({ access_token, refresh_token })
+                    "/#" + qs.stringify({ access_token, refresh_token })
                 );
             } else {
-                res.redirect(
-                    "/#" + qs.stringify({ error: "invalid_token" })
-                );
+                res.redirect("/#" + qs.stringify({ error: "invalid_token" }));
             }
         });
     }

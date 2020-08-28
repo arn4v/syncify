@@ -3,7 +3,6 @@ import { PlatformInfo, SpotifyInfo, MethodStatus } from "../interfaces/global";
 import { DataHelper } from "../data/data_helper";
 import { RequestsHandler } from "./requests_handler";
 
-
 export async function getPlaylistOrAlbumItems(
     platformInfo: PlatformInfo,
     uris: string[]
@@ -21,7 +20,11 @@ export async function getPlaylistOrAlbumItems(
         .then(async (spotifyInfo: SpotifyInfo) => {
             if (albumUris.length >= 1) {
                 for (const album of albumUris) {
-                    await RequestsHandler.getAlbumItems(platformInfo, spotifyInfo, album)
+                    await RequestsHandler.getAlbumItems(
+                        platformInfo,
+                        spotifyInfo,
+                        album
+                    )
                         .then((res: string[]) => {
                             if (res.length > 0) {
                                 res.forEach((track) => {

@@ -1,10 +1,12 @@
-import axios from 'axios';
+import axios from "axios";
 import {
-    PlatformInfo, SpotifyInfo, MethodStatus
-} from '../../interfaces/global'
-import { endpoints } from './endpoints'
-import { refreshAccessToken } from './refresh_tokens'
-import { DataHelper } from '../../data/data_helper'
+    PlatformInfo,
+    SpotifyInfo,
+    MethodStatus,
+} from "../../interfaces/global";
+import { endpoints } from "./endpoints";
+import { refreshAccessToken } from "./refresh_tokens";
+import { DataHelper } from "../../data/data_helper";
 
 /**
     This function exists purely to be used by other Spotify methods in this

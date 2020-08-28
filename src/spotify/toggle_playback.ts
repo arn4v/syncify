@@ -22,7 +22,6 @@ import { RequestsHandler } from "./requests_handler";
 //         status.message = unsuccessful_message;
 //     });
 
-
 // This function serves to fetch spotify access/refresh token for
 // togglePlaybackRequestFunc to use to carry out the call to the Spotify
 // Web API

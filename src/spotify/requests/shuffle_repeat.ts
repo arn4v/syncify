@@ -1,22 +1,27 @@
-import axios from 'axios'
-import { ShuffleRepeatState } from '../../interfaces/spotify';
-import { SpotifyInfo, MethodStatus } from "../../interfaces/global";
+import axios from "axios";
+import { ShuffleRepeatState, RequestStatus } from "../../interfaces/spotify";
+import { SpotifyInfo } from "../../interfaces/global";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_tokens";
 
 export async function toggleShuffleRepeatRequest(
     requestType: number,
-    state: ShuffleRepeatState,
+    toggleState: ShuffleRepeatState,
     spotifyInfo: SpotifyInfo
-) {
+): Promise<RequestStatus> {
     let requestUrl: string =
         requestType == 1
             ? endpoints.shuffle_playback.url
             : endpoints.repeat_playback.url;
 
-    let status: MethodStatus = {
-        done: undefined,
-        rawData: undefined,
+    // Can probably unify response and error since they serve the same
+    // purpose
+    let status: RequestStatus = {
+        successfull: false,
+        status: undefined,
+        response: undefined,
+        error: undefined,
+        isRefreshed: false,
     };
 
     await axios({
@@ -25,12 +30,13 @@ export async function toggleShuffleRepeatRequest(
         headers: {
             Authorization: `Bearer ${spotifyInfo.spotifyAccessToken}`,
         },
-        params: { state: state.toggleState },
+        params: { state: toggleState },
     })
         .then(async (res: any) => {
+            status.response = res.data;
             if (res.status == (200 || 201 || 204)) {
-                status.done = true;
-                status.rawData = res.data;
+                status.status = res.status;
+                status.successfull = true;
             } else if (res.status == (400 || 401)) {
                 await refreshAccessToken(spotifyInfo.spotifyRefreshToken).then(
                     async (newAccessToken: string) => {
@@ -40,19 +46,16 @@ export async function toggleShuffleRepeatRequest(
                             headers: {
                                 Authorization: `Bearer ${newAccessToken}`,
                             },
-                            params: { state: state.toggleState },
+                            params: { state: toggleState },
                         })
                             .then(async (_res: any) => {
+                                status.status = res.status;
+                                status.response = _res.data;
                                 if (_res.status == (200 || 201)) {
-                                    status.done = true;
-                                    status.rawData = _res.data;
-                                } else {
-                                    status.done = false;
-                                    status.rawData = _res.data;
+                                    status.successfull = true;
                                 }
                             })
                             .catch((error: Error) => {
-                                status.done = false;
                                 status.error = error;
                                 console.log(
                                     `ERROR: toggleShuffle: axiosFunc: Catch Block ${error}`
@@ -60,12 +63,9 @@ export async function toggleShuffleRepeatRequest(
                             });
                     }
                 );
-            } else {
-                status.done = true;
             }
         })
         .catch((error) => {
-            status.done = false;
             status.error = error;
             console.log(`ERROR: toggleShuffle: ${error}`);
         });

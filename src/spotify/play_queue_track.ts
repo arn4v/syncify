@@ -1,20 +1,68 @@
 import { DataHelper } from "../data/data_helper";
-import { MethodStatus, UserInfo, SpotifyInfo } from "../interfaces/global";
+import {
+    MethodStatus,
+    UserInfo,
+    SpotifyInfo,
+    PlatformInfo,
+} from "../interfaces/global";
 import { trackLinkValidator } from "../helpers/spotify_link_validator";
 import { getPlaylistOrAlbumItems } from "./playlist_helper";
 import { RequestsHandler } from "./requests_handler";
- 
-async function playTrack() {
+import { RequestStatus } from "../interfaces/spotify";
 
-
-    await DataHelper.fetchSpotifyTokens(platformInfo)
-        .then(async (spotifyInfo: SpotifyInfo) => {
-            let access_token: string = spotifyInfo.spotifyAccessToken;
-
-            await toggleShuffleRepeatRequest(1, { toggleState: false }, spotifyInfo)
-                .then(async () => {
-
+async function fetchAndQuery(
+    platformInfo: PlatformInfo,
+    tracks: string[],
+    type: "queue" | "play"
+): Promise<boolean> {
+    let done: boolean = false;
+    await DataHelper.fetchSpotifyTokens(platformInfo).then(
+        async (spotifyInfo: SpotifyInfo) => {
+            if (type == "play") {
+                await RequestsHandler.playTrack(spotifyInfo, tracks).then(
+                    async (res: RequestStatus) => {
+                        if (res != undefined) {
+                            if (res?.status == 204 || res.successfull) {
+                                done = true;
+                                if (
+                                    res.isRefreshed &&
+                                    res.newAccessToken != undefined
+                                ) {
+                                    DataHelper.updateSpotifyAccessToken(
+                                        res.newAccessToken,
+                                        platformInfo
+                                    );
+                                }
+                            }
+                        }
+                    }
+                );
+            } else {
+                for (const uri of tracks) {
+                    await RequestsHandler.queue(spotifyInfo, uri)
+                        .then((res: RequestStatus) => {
+                            done = res.successfull;
+                            if (
+                                res.isRefreshed &&
+                                res.newAccessToken != undefined
+                            ) {
+                                DataHelper.updateSpotifyAccessToken(
+                                    res.newAccessToken,
+                                    platformInfo
+                                );
+                            }
+                        })
+                        .catch((error: string) => {
+                            console.log("ERROR", error);
+                            done = false;
+                        });
+                }
+            }
+        }
+    );
+    return done;
 }
+
 export async function playOrAddToQueue(
     platformInfo: any,
     songLink: string[]
@@ -70,39 +118,36 @@ export async function playOrAddToQueue(
                                             }
                                         });
                                     }
-                                    if (res.data.playInstant) {
-                                        await RequestsHandler.playTrack(platInfo, uris)
-                                            .then((_res: boolean) => {
-                                                status.done = _res;
-                                                status.message = successful_play_session;
-                                            })
-                                            .catch((error: string) => {
-                                                console.log(error);
-                                                status.done = false;
-                                                status.message = unsuccessful_play_session;
-                                            });
+                                    await fetchAndQuery(
+                                        platformInfo,
+                                        uris,
+                                        res.data.playInstant ? "play" : "queue"
+                                    )
+                                        .then((_res: boolean) => {
+                                            status.done = _res;
+                                            status.message = res.data
+                                                .playInstant
+                                                ? successful_queue_session
+                                                : successful_play_session;
+                                        })
+                                        .catch((error: string) => {
+                                            console.log(error);
+                                            status.done = false;
+                                            status.message = res.data
+                                                .playInstant
+                                                ? unsuccessful_play_session
+                                                : unsuccessful_queue_session;
+                                        });
 
+                                    if (res.data.playInstant) {
                                         await DataHelper.updatePlayInstantStatus(
                                             platformInfo
                                         ).catch((error: string) =>
                                             console.log(
                                                 "ERROR: addToSessionQueue: " +
-                                                error
+                                                    error
                                             )
                                         );
-                                    } else {
-                                        for (const uri of uris) {
-                                            await RequestsHandler.queue(platInfo, uri)
-                                                .then((_res: boolean) => {
-                                                    status.done = _res;
-                                                    status.message = successful_queue_session;
-                                                })
-                                                .catch((error: string) => {
-                                                    console.log("ERROR", error);
-                                                    status.done = false;
-                                                    status.message = unsuccessful_queue_session;
-                                                });
-                                        }
                                     }
                                 }
                             } catch (err) {

@@ -1,17 +1,19 @@
 import { DataHelper } from "../data/data_helper";
-import { PlatformInfo, MethodStatus, SpotifyInfo } from "../interfaces/global";
+import {
+    PlatformInfo,
+    MethodStatus,
+    SpotifyInfo,
+    UserInfo,
+} from "../interfaces/global";
 import { RequestsHandler } from "./requests_handler";
-import { ShuffleRepeatState } from "../interfaces/spotify";
-
+import { ShuffleRepeatState, RequestStatus } from "../interfaces/spotify";
 
 async function fetchAndQuery(
     platformInfo: PlatformInfo,
     toggleState: ShuffleRepeatState,
     requestType: number
-): Promise<MethodStatus> {
-    let status: MethodStatus = {
-        done: undefined,
-    };
+): Promise<boolean> {
+    let done: boolean = false;
     await DataHelper.fetchSpotifyTokens(platformInfo).then(
         async (spotifyInfo: SpotifyInfo) => {
             await RequestsHandler.toggleShuffleRepeat(
@@ -19,12 +21,8 @@ async function fetchAndQuery(
                 toggleState,
                 spotifyInfo
             )
-                .then(async (res: MethodStatus) => {
-                    if (res.done) {
-                        status = res;
-                    } else {
-                        status.done = false;
-                    }
+                .then(async (res: RequestStatus) => {
+                    done = res.successfull;
                 })
                 .catch((error: Error) =>
                     console.log(
@@ -33,79 +31,84 @@ async function fetchAndQuery(
                 );
         }
     );
-    return status;
+    return done;
 }
 
 export async function toggleShuffleRepeat(
     platformInfo: PlatformInfo,
     toggleState: ShuffleRepeatState,
-    request_type: number
-) {
+    requestType: number
+): Promise<MethodStatus> {
     let status: MethodStatus = {
         done: false,
+        message: undefined,
     };
 
-    await DataHelper.doesSessionExist(platformInfo)
-        .then(async (res: MethodStatus) => {
-            console.log(res);
-            if (res.done) {
-                console.log(res);
-                let members: string[] = JSON.parse(res.data.members);
-                try {
-                    for (const member of members) {
-                        let platInfo: any = platformInfo;
-                        platInfo.type == 1
-                            ? (platInfo.discordUserId = member)
-                            : (platInfo.telegramUserId = member);
-                        await fetchAndQuery(
-                            platInfo,
-                            toggleState,
-                            request_type
-                        ).catch((error) => console.log(error));
-                    }
-                    status.done = true;
-                    status.message =
-                        request_type == 1
-                            ? "Shuffled playback for this session"
-                            : "Put playback on repeat for the session.";
-                } catch (err) {
-                    if (err) status.done = false;
-                    status.message =
-                        request_type == 1
-                            ? `Unable to shuffle playback for session`
-                            : "Unable to put playback on repeat for session";
+    await DataHelper.doesUserExist(platformInfo).then(
+        async (user: UserInfo) => {
+            if (user.exists) {
+                if (user.inSession) {
+                    await DataHelper.doesSessionExist(platformInfo)
+                        .then(async (res: MethodStatus) => {
+                            if (res.done) {
+                                if (
+                                    user.sessionInfo &&
+                                    user.sessionInfo.id == res.data.sessionId
+                                ) {
+                                    let members: string[] = JSON.parse(
+                                        res.data.members
+                                    );
+                                    try {
+                                        for (const member of members) {
+                                            let platInfo: any = platformInfo;
+                                            platInfo.type == 1
+                                                ? (platInfo.discordUserId = member)
+                                                : (platInfo.telegramUserId = member);
+                                            await fetchAndQuery(
+                                                platInfo,
+                                                toggleState,
+                                                requestType
+                                            ).catch((error) =>
+                                                console.log(error)
+                                            );
+                                        }
+                                        status.done = true;
+                                        status.message =
+                                            requestType == 1
+                                                ? "Shuffled playback for this session"
+                                                : "Put playback on repeat for the session.";
+                                    } catch (err) {
+                                        if (err) status.done = false;
+                                        status.message =
+                                            requestType == 1
+                                                ? `Unable to shuffle playback for session`
+                                                : "Unable to put playback on repeat for session";
+                                    }
+                                } else {
+                                    status.done = false;
+                                    status.message =
+                                        "You're enrolled in a different session, please use the leave command to leave the session";
+                                }
+                            } else {
+                                status.done = false;
+                                status.message =
+                                    "Please start a session first.";
+                            }
+                        })
+                        .catch((error: Error) => {
+                            console.log(error);
+                            status.done = false;
+                            status.message = `Unable to pause`;
+                        });
+                } else {
+                    status.done = false;
+                    status.message = "Please start/join a session first.";
                 }
             } else {
-                await fetchAndQuery(platformInfo, toggleState, request_type)
-                    .then((_res: any) => {
-                        if (_res == true) {
-                            status.done = true;
-                            status.message =
-                                request_type == 1
-                                    ? `Shuffled playback`
-                                    : `Put playback on repeat`;
-                        } else {
-                            status.done = false;
-                            status.message =
-                                request_type == 1
-                                    ? "Unable to shuffle playback"
-                                    : "Unable to put playback on repeat.";
-                        }
-                    })
-                    .catch((error) => {
-                        console.log(error);
-                        status.done = false;
-                        status.message =
-                            request_type == 1
-                                ? "Unable to shuffle playback."
-                                : "Unable to put playback on repeat.";
-                    });
+                status.done = false;
+                status.message = "Please register first.";
             }
-        })
-        .catch((error) => {
-            console.log(error);
-            status.done = false;
-            status.message = `Unable to pause`;
-        });
+        }
+    );
     return status;
 }

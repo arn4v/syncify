@@ -663,48 +663,66 @@ export class ORMHelper {
             message: undefined,
             data: undefined,
         };
-
-        await connection
-            .getRepository(Session)
-            .findOne({
-                where: {
-                    platformGroupID:
-                        platformInfo.type == 1
-                            ? platformInfo.discordUserId
-                            : platformInfo.telegramGroupId,
-                },
-            })
-            .then(async (session: any) => {
-                const members = JSON.parse(session?.members as string);
-                const filtered_members: string[] = members.filter(
-                    (user: string) => {
-                        user !==
-                            (platformInfo.type == 1
-                                ? platformInfo.discordUserId
-                                : platformInfo.telegramUserId);
-                    }
-                );
-                session.members = JSON.stringify(filtered_members);
-                await connection.manager
-                    .save(session)
-                    .then((_res) => {
-                        console.log(_res);
+        await this.doesUserExist(platformInfo).then(async (user: UserInfo) => {
+            if (user.exists) {
+            }
+            await connection
+                .getRepository(Session)
+                .findOne({
+                    where: {
+                        platformGroupId:
+                            platformInfo.type == 1
+                                ? platformInfo.discordServerId
+                                : platformInfo.telegramGroupId,
+                    },
+                })
+                .then(async (session: any) => {
+                    let members = JSON.parse(session.members as string);
+                    if (members.length == 1 && members.includes(userId)) {
+                        connection
+                            .createQueryBuilder()
+                            .delete()
+                            .from(Session)
+                            .where("sessionId = :sessionId", {
+                                sessionId: session.sessionId,
+                            })
+                            .execute();
                         status.done = true;
-                        status.message = "You have left the session";
-                        status.data = _res;
-                    })
-                    .catch((err) => {
-                        console.log("err");
-                        status.done = false;
-                        status.message = "Unable to leave session";
-                        status.error = err;
-                    });
-            })
-            .catch((err) => {
-                status.done = false;
-                status.message = "Unable to leave session";
-                status.error = err;
-            });
+                        status.message =
+                            "The session has been deleted since you were the only member (and admin)...";
+                    } else {
+                        const filtered_members: string[] = members.filter(
+                            (user: string) => {
+                                user !==
+                                    (platformInfo.type == 1
+                                        ? platformInfo.discordUserId
+                                        : platformInfo.telegramUserId);
+                            }
+                        );
+                        session.members = JSON.stringify(filtered_members);
+                        await connection.manager
+                            .save(session)
+                            .then((_res) => {
+                                console.log(_res);
+                                status.done = true;
+                                status.message = "You have left the session";
+                                status.data = _res;
+                            })
+                            .catch((err) => {
+                                console.log("err");
+                                status.done = false;
+                                status.message = "Unable to leave session";
+                                status.error = err;
+                            });
+                    }
+                })
+                .catch((err) => {
+                    console.log(err);
+                    status.done = false;
+                    status.message = "Unable to leave session";
+                    status.error = err;
+                });
+        });
         return status;
     }
 }

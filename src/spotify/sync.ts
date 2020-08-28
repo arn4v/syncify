@@ -1,7 +1,12 @@
 import { DataHelper } from "../data/data_helper";
-import { MethodStatus, UserInfo, PlatformInfo, SpotifyInfo } from "../interfaces/global";
+import {
+    MethodStatus,
+    UserInfo,
+    PlatformInfo,
+    SpotifyInfo,
+} from "../interfaces/global";
 import { Track } from "../interfaces/spotify";
-import { RequestsHandler } from './requests_handler'
+import { RequestsHandler } from "./requests_handler";
 
 async function getAdminTrackInfo(platformInfo: PlatformInfo) {
     let trackInfo: Track = Object();
@@ -31,8 +36,10 @@ export async function syncSession(platformInfo: any): Promise<MethodStatus> {
                 if (user?.inSession) {
                     await DataHelper.doesSessionExist(platformInfo)
                         .then(async (res: MethodStatus) => {
-                            if (user.sessionInfo?.id == res.data.sessionId) {
-                                if (res.done) {
+                            if (res.done) {
+                                if (
+                                    user.sessionInfo?.id == res.data.sessionId
+                                ) {
                                     let members: Array<string> = JSON.parse(
                                         res.data.members
                                     );
@@ -46,17 +53,21 @@ export async function syncSession(platformInfo: any): Promise<MethodStatus> {
                                         await DataHelper.fetchSpotifyTokens(
                                             platInfo
                                         )
-                                            .then(async (spotifyInfo: SpotifyInfo) => {
-                                                await RequestsHandler.togglePlayback(
-                                                    platInfo,
-                                                    spotifyInfo,
-                                                    2
-                                                ).catch(() => {
-                                                    status.done = false;
-                                                    status.message =
-                                                        "Unable to sync session";
-                                                });
-                                            })
+                                            .then(
+                                                async (
+                                                    spotifyInfo: SpotifyInfo
+                                                ) => {
+                                                    await RequestsHandler.togglePlayback(
+                                                        platInfo,
+                                                        spotifyInfo,
+                                                        2
+                                                    ).catch(() => {
+                                                        status.done = false;
+                                                        status.message =
+                                                            "Unable to sync session";
+                                                    });
+                                                }
+                                            )
                                             .catch(() => {
                                                 status.done = false;
                                                 status.message =
@@ -70,56 +81,50 @@ export async function syncSession(platformInfo: any): Promise<MethodStatus> {
                                         : (adminPlatInfo.telegramUserId = admin);
 
                                     await getAdminTrackInfo(adminPlatInfo)
-                                        .then(
-                                            async (
-                                                trackInfo: Track
-                                            ) => {
-                                                if (trackInfo != undefined) {
-                                                    let position: number = trackInfo?.position as number;
-                                                    for (const member of members) {
-                                                        let platInfo = platformInfo;
-                                                        platInfo.type == 1
-                                                            ? (platInfo.discordUserId = member)
-                                                            : (platInfo.telegramUserId = member);
+                                        .then(async (trackInfo: Track) => {
+                                            if (trackInfo != undefined) {
+                                                let position: number = trackInfo?.position as number;
+                                                for (const member of members) {
+                                                    let platInfo = platformInfo;
+                                                    platInfo.type == 1
+                                                        ? (platInfo.discordUserId = member)
+                                                        : (platInfo.telegramUserId = member);
 
-                                                        await DataHelper.fetchSpotifyTokens(
-                                                            platInfo
+                                                    await DataHelper.fetchSpotifyTokens(
+                                                        platInfo
+                                                    )
+                                                        .then(
+                                                            async (
+                                                                spotifyInfo: SpotifyInfo
+                                                            ) => {
+                                                                await RequestsHandler.seek(
+                                                                    platInfo,
+                                                                    spotifyInfo,
+                                                                    position
+                                                                );
+                                                                await RequestsHandler.togglePlayback(
+                                                                    platInfo,
+                                                                    spotifyInfo,
+                                                                    1
+                                                                ).catch(() => {
+                                                                    status.done = false;
+                                                                    status.message =
+                                                                        "Unable to sync session";
+                                                                });
+                                                            }
                                                         )
-                                                            .then(
-                                                                async (
-                                                                    spotifyInfo: SpotifyInfo
-                                                                ) => {
-                                                                    await RequestsHandler.seek(
-                                                                        platInfo,
-                                                                        spotifyInfo,
-                                                                        position
-                                                                    );
-                                                                    await RequestsHandler.togglePlayback(
-                                                                        platInfo,
-                                                                        spotifyInfo,
-                                                                        1
-                                                                    ).catch(
-                                                                        () => {
-                                                                            status.done = false;
-                                                                            status.message =
-                                                                                "Unable to sync session";
-                                                                        }
-                                                                    );
-                                                                }
-                                                            )
-                                                            .catch(() => {
-                                                                status.done = false;
-                                                                status.message =
-                                                                    "Unable to sync session";
-                                                            });
-                                                    }
-                                                } else {
-                                                    status.done = false;
-                                                    status.message =
-                                                        "Unable to sync session";
+                                                        .catch(() => {
+                                                            status.done = false;
+                                                            status.message =
+                                                                "Unable to sync session";
+                                                        });
                                                 }
+                                            } else {
+                                                status.done = false;
+                                                status.message =
+                                                    "Unable to sync session";
                                             }
-                                        )
+                                        })
                                         .catch((error) => {
                                             console.log(error);
                                             status.done = false;
@@ -130,7 +135,7 @@ export async function syncSession(platformInfo: any): Promise<MethodStatus> {
                             } else {
                                 status.done = false;
                                 status.message =
-                                    "You are enrolled in a different session.";
+                                    "You are in a different session. Please use the leave command to leave that session.";
                             }
                         })
                         .catch((error) => {

@@ -2,9 +2,9 @@ import axios from "axios";
 import { endpoints } from "./endpoints";
 import { DataHelper } from "../../data/data_helper";
 import { refreshAccessToken } from "./refresh_tokens";
-import {SpotifyInfo} from "../../interfaces/global";
+import { PlatformInfo } from "../../interfaces/global";
 
-async function searchSpotify(platformInfo: SpotifyInfo, query: string) {
+async function searchSpotify(platformInfo: PlatformInfo, query: string) {
     let userId: string | undefined =
         platformInfo.type == 1
             ? platformInfo.discordUserId

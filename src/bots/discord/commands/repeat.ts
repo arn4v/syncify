@@ -11,13 +11,9 @@ module.exports = {
             discordServerId: message.guild.id,
         };
 
-        await toggleShuffleRepeat(platformInfo, { toggleState: "track" }, 2)
+        await toggleShuffleRepeat(platformInfo, "track", 2)
             .then(async (res: MethodStatus) => {
-                if (status) {
-                    message.reply(`Shuffled your queue`);
-                } else {
-                    message.reply(`Unable to shuffle queue`);
-                }
+                message.reply(res.message);
             })
             .catch((error: string) => {
                 console.log(`ERROR: discord/commands/shuffle: ${error}`);

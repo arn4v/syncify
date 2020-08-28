@@ -1,19 +1,19 @@
 import Axios from "axios";
-import { DataHelper } from "../../data/data_helper";
-import { endpoints } from './endpoints'
+import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_tokens";
-import { toggleShuffleRepeatRequest } from "./shuffle_repeat";
-import { SpotifyInfo, MethodStatus } from "../../interfaces/global";
+import { SpotifyInfo } from "../../interfaces/global";
+import { RequestStatus } from "../../interfaces/spotify";
 
-export async function playTrack(
+export async function playTrackRequest(
     spotifyInfo: SpotifyInfo,
     tracks: string[]
-): Promise<boolean> {
-    let new_access_token: string;
-    let status: MethodStatus = {
-        done: false,
+): Promise<RequestStatus> {
+    let status: RequestStatus = {
+        successfull: false,
+        status: undefined,
         error: undefined,
-        data: undefined,
+        response: undefined,
+        isRefreshed: false,
     };
     const request_url: string = endpoints.play_track.url;
 
@@ -21,7 +21,7 @@ export async function playTrack(
         url: request_url,
         method: "put",
         headers: {
-            Authorization: "Bearer " + access_token,
+            Authorization: "Bearer " + spotifyInfo.spotifyAccessToken,
             "Content-Type": "application/json",
         },
         data: {
@@ -29,55 +29,51 @@ export async function playTrack(
         },
     })
         .then((res: any) => {
-            console.log(res.config);
-            res.status == 204
-                ? (_done = true)
-                : (_done = false);
+            if (res.status == 204) {
+                status.successfull = true;
+            }
+            status.status = res.status;
+            status.response = res.data;
         })
         .catch(async (error: any) => {
+            status.status = error.response.status;
+            status.error = error.response;
             if (error.response.status == 401) {
-
-                await refreshAccessToken(
-                    spotifyInfo.spotifyRefreshToken
-                ).then(async (data: any) => {
-                    new_access_token = data;
-                    DataHelper.updateSpotifyAccessToken(
-                        data,
-                        platformInfo
-                    );
-                    await Axios({
-                        url: request_url,
-                        method: "put",
-                        headers: {
-                            Authorization:
-                                "Bearer " + new_access_token,
-                        },
-                        data: {
-                            uris: [tracks[0]],
-                        },
-                    })
-                        .then((_res: any) => {
-                            if (_res.status == 204) {
-                                _done = true;
-                            }
+                await refreshAccessToken(spotifyInfo.spotifyRefreshToken).then(
+                    async (newAccessToken: any) => {
+                        status.isRefreshed = true;
+                        status.newAccessToken = newAccessToken;
+                        await Axios({
+                            url: request_url,
+                            method: "put",
+                            headers: {
+                                Authorization: "Bearer " + newAccessToken,
+                            },
+                            data: {
+                                uris: [tracks[0]],
+                            },
                         })
-                        .catch((_error) =>
-                            console.log(
-                                "Error: resumePausePlayback: Second axios call: ",
-                                _error
-                            )
-                        );
-                });
+                            .then((_res: any) => {
+                                status.status = _res.status;
+                                status.response = _res.data;
+                                if (_res.status == 204) {
+                                    status.successfull = true;
+                                }
+                            })
+                            .catch((_error) => {
+                                status.error = _error;
+                                console.log(
+                                    "Error: resumePausePlayback: Second axios call: ",
+                                    _error
+                                );
+                            });
+                    }
+                );
             } else {
                 console.log(
                     `ERROR: play_queue_track:playTrack:136: ${error.response.status}`
                 );
-                _done = false;
             }
         });
-        })
-        .catch (() => {
-    _done = false;
-});
-return _done;
+    return status;
 }

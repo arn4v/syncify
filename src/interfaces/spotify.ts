@@ -18,16 +18,15 @@ export interface PlaylistInfo {
     items: Track[];
 }
 
-export interface AlbumInfo extends PlaylistInfo { }
+export interface AlbumInfo extends PlaylistInfo {}
 
-export interface ShuffleRepeatState {
-    toggleState: boolean | "off" | "context" | "track",
-}
+export type ShuffleRepeatState = boolean | "off" | "context" | "track";
 
 export interface RequestStatus {
-    status: number;
-    response: any;
-    error: any;
-    isRefreshed: boolean;
-    refreshToken?: string;
+    successfull: boolean;
+    status: number | undefined;
+    response: any | undefined;
+    error: any | undefined;
+    isRefreshed: boolean | undefined;
+    newAccessToken?: string;
 }

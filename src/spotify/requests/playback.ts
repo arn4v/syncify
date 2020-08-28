@@ -1,12 +1,8 @@
 import axios from "axios";
-import {
-    PlatformInfo,
-    SpotifyInfo,
-    MethodStatus,
-} from "../../interfaces/global";
+import { RequestStatus } from "../../interfaces/spotify";
+import { SpotifyInfo } from "../../interfaces/global";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_tokens";
-import { DataHelper } from "../../data/data_helper";
 
 /**
     This function exists purely to be used by other Spotify methods in this
@@ -16,13 +12,15 @@ import { DataHelper } from "../../data/data_helper";
     used for individual queries in chat bots. 
 **/
 export async function togglePlaybackRequest(
-    platformInfo: PlatformInfo,
     spotifyInfo: SpotifyInfo,
     requestType: number
-): Promise<MethodStatus> {
-    let status: MethodStatus = {
-        done: undefined,
-        message: undefined,
+): Promise<RequestStatus> {
+    let status: RequestStatus = {
+        successfull: false,
+        status: undefined,
+        error: undefined,
+        response: undefined,
+        isRefreshed: false,
     };
 
     const request_url: string =
@@ -38,16 +36,18 @@ export async function togglePlaybackRequest(
         },
     })
         .then((res) => {
-            res.status == 204 ? (status.done = true) : (status.done = false);
+            status.status = res.status;
+            status.response = res.data;
+            res.status == 204
+                ? (status.successfull = true)
+                : (status.successfull = false);
         })
         .catch(async (error) => {
-            if (error.response.status == 401) {
+            if (error.response.status == 401 || error.response.status == 403) {
                 await refreshAccessToken(spotifyInfo.spotifyRefreshToken).then(
-                    async (newAccessToken: any) => {
-                        DataHelper.updateSpotifyAccessToken(
-                            newAccessToken,
-                            platformInfo
-                        );
+                    async (newAccessToken: string) => {
+                        status.isRefreshed = true;
+                        status.newAccessToken = newAccessToken;
                         await axios({
                             url: request_url,
                             method: "put",
@@ -56,8 +56,10 @@ export async function togglePlaybackRequest(
                             },
                         })
                             .then((_res) => {
+                                status.status = _res.status;
+                                status.response = _res.data;
                                 if (_res.status == 204) {
-                                    status.done = true;
+                                    status.successfull = true;
                                 }
                             })
                             .catch((_error) =>
@@ -72,7 +74,8 @@ export async function togglePlaybackRequest(
                 console.log(
                     `ERROR: SpotifyHelper.resumePlayback: ${error.response.status}`
                 );
-                status.done = false;
+                status.successfull = false;
+                status.status = error.response.status;
                 status.error = error;
             }
         });

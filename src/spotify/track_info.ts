@@ -1,7 +1,6 @@
-import axios from "axios";
 import { DataHelper } from "../data/data_helper";
 import { MethodStatus } from "../interfaces/global";
-import { Track, Artist } from "../interfaces/spotify";
+import { RequestStatus } from "../interfaces/spotify";
 import { RequestsHandler } from "./requests_handler";
 
 async function fetchAndRequest(platformInfo: any): Promise<MethodStatus> {
@@ -14,12 +13,14 @@ async function fetchAndRequest(platformInfo: any): Promise<MethodStatus> {
 
     await DataHelper.fetchSpotifyTokens(platformInfo)
         .then(async (spotifyInfo) => {
-            await RequestsHandler.trackInfo(platformInfo, spotifyInfo)
-                .then((res: any) => {
-                    if (res.done) {
-                        status = res;
+            await RequestsHandler.trackInfo(spotifyInfo)
+                .then((res: RequestStatus) => {
+                    if (res.successfull) {
+                        status.done = res.successfull;
+                        if (res.trackInfo !== undefined)
+                            status.data = res.trackInfo;
                     } else {
-                        status = res;
+                        status.done = false;
                     }
                 })
                 .catch(() => (status.done = false));
@@ -30,12 +31,10 @@ async function fetchAndRequest(platformInfo: any): Promise<MethodStatus> {
     return status;
 }
 
-export async function getTrackInfo(platformInfo: any) {
+export async function getTrackInfo(platformInfo: any): Promise<MethodStatus> {
     let status: MethodStatus = {
-        done: undefined,
-        message: undefined,
+        done: false,
         data: undefined,
-        rawData: undefined,
     };
 
     await DataHelper.doesSessionExist(platformInfo)
@@ -53,17 +52,14 @@ export async function getTrackInfo(platformInfo: any) {
                         ? (platInfo.discordUserId = admin)
                         : (platInfo.telegramUserId = admin);
                     await fetchAndRequest(platInfo)
-                        .then((res: MethodStatus) => {
-                            status.data = res.data;
-                            status.rawData = res.rawData;
-                            status.done = true;
-                            status.message =
-                                `Currently playing [${res.data?.name}](${res.data?.link}) by ` +
-                                res.data?.artists
-                                    .map((artist: Artist) => {
-                                        `[${artist.name}](${artist.link})`;
-                                    })
-                                    .join(", ");
+                        .then((_res: MethodStatus) => {
+                            if (_res.done && _res.data !== undefined) {
+                                status.data = _res.data;
+                                status.done = true;
+                            } else {
+                                status.message =
+                                    "An error occured while trying to query Spotify.";
+                            }
                         })
                         .catch((error) => {
                             console.log(error);
@@ -76,7 +72,7 @@ export async function getTrackInfo(platformInfo: any) {
                 }
             } else {
                 status.done = false;
-                status.message = "Please fetch";
+                status.message = "Please start a session first.";
             }
         })
         .catch((error) => {

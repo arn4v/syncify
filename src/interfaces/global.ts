@@ -23,10 +23,11 @@ export interface SessionInfo {
     id: string | undefined;
     platform: number | undefined;
     groupId: string | undefined;
-    members?: string[] | undefined;
+    members?: string[];
 }
 
 export interface UserInfo {
+    id?: string;
     exists?: boolean;
     inSession?: boolean;
     sessionInfo?: SessionInfo;

@@ -125,6 +125,7 @@ export class ORMHelper {
             .then(async (user?: User) => {
                 if (user !== undefined) {
                     userInfo.exists = true;
+                    userInfo.id = user.syncifyUserId;
                     await this.isUserInSession(platformInfo).then(
                         async (res: MethodStatus) => {
                             if (res.done) {
@@ -347,11 +348,17 @@ export class ORMHelper {
                             },
                         })
                         .then(async (session: any) => {
-                            if (res.inSession == session.sessionId) {
+                            if (
+                                res.inSession &&
+                                res?.sessionInfo?.id === session.sessionId
+                            ) {
                                 status.done = true;
                                 status.message =
                                     "You're already a part of this session.";
-                            } else if (res.inSession != session.sessionId) {
+                            } else if (
+                                res.inSession &&
+                                res?.sessionInfo?.id != session.sessionId
+                            ) {
                                 status.done = false;
                                 status.message =
                                     "You're already in a sesssion.";
@@ -455,7 +462,7 @@ export class ORMHelper {
             .findOne({ where: { platformGroupId: groupId } })
             .then(async (session: any) => {
                 session.playInstant =
-                    session.playInstant == true ? false : true;
+                    session.playInstant === true ? false : false;
                 connection.manager.save(session).then(() => {
                     status.done = true;
                     status.message = "Updated status";
@@ -657,74 +664,93 @@ export class ORMHelper {
     }
 
     static async leaveSession(platformInfo: PlatformInfo) {
-        const connection: Connection = getConnection();
         const userId: string = (platformInfo.type == 1
             ? platformInfo.discordUserId
             : platformInfo.telegramUserId) as string;
+        const connection: Connection = getConnection();
+
         let status: MethodStatus = {
             done: false,
             message: undefined,
             data: undefined,
         };
+
         await this.doesUserExist(platformInfo).then(async (user: UserInfo) => {
             if (user.exists) {
-            }
-            await connection
-                .getRepository(Session)
-                .findOne({
-                    where: {
-                        platformGroupId:
-                            platformInfo.type == 1
-                                ? platformInfo.discordServerId
-                                : platformInfo.telegramGroupId,
-                    },
-                })
-                .then(async (session: any) => {
-                    let members = JSON.parse(session.members as string);
-                    if (members.length == 1 && members.includes(userId)) {
-                        connection
-                            .createQueryBuilder()
-                            .delete()
-                            .from(Session)
-                            .where("sessionId = :sessionId", {
-                                sessionId: session.sessionId,
-                            })
-                            .execute();
-                        status.done = true;
-                        status.message =
-                            "The session has been deleted since you were the only member (and admin)...";
-                    } else {
-                        const filtered_members: string[] = members.filter(
-                            (user: string) => {
-                                user !==
-                                    (platformInfo.type == 1
-                                        ? platformInfo.discordUserId
-                                        : platformInfo.telegramUserId);
-                            }
-                        );
-                        session.members = JSON.stringify(filtered_members);
-                        await connection.manager
-                            .save(session)
-                            .then((_res) => {
-                                console.log(_res);
-                                status.done = true;
-                                status.message = "You have left the session";
-                                status.data = _res;
-                            })
-                            .catch((err) => {
-                                console.log("err");
+                await this.doesSessionExist(platformInfo)
+                    .then(async (session: MethodStatus) => {
+                        if (
+                            user.inSession &&
+                            user.sessionInfo?.id === session.data.sessionId
+                        ) {
+                            if (user.id !== session.data.createdBy) {
+                                let members = JSON.parse(
+                                    session.data.members as string
+                                );
+                                if (
+                                    members.length == 1 &&
+                                    members.includes(userId)
+                                ) {
+                                    connection
+                                        .createQueryBuilder()
+                                        .delete()
+                                        .from(Session)
+                                        .where("sessionId = :sessionId", {
+                                            sessionId: session.data.sessionId,
+                                        })
+                                        .execute();
+                                    status.done = true;
+                                    status.message =
+                                        "The session has been deleted since you were the only member (and admin)...";
+                                } else {
+                                    const filtered_members: string[] = members.filter(
+                                        (user: string) => {
+                                            user !==
+                                                (platformInfo.type == 1
+                                                    ? platformInfo.discordUserId
+                                                    : platformInfo.telegramUserId);
+                                        }
+                                    );
+                                    session.data.members = JSON.stringify(
+                                        filtered_members
+                                    );
+                                    await connection.manager
+                                        .save(session)
+                                        .then((_res) => {
+                                            console.log(_res);
+                                            status.done = true;
+                                            status.message =
+                                                "You have left the session";
+                                            status.data = _res;
+                                        })
+                                        .catch((err) => {
+                                            console.log("err");
+                                            status.done = false;
+                                            status.message =
+                                                "Unable to leave session";
+                                            status.error = err;
+                                        });
+                                }
+                            } else {
                                 status.done = false;
-                                status.message = "Unable to leave session";
-                                status.error = err;
-                            });
-                    }
-                })
-                .catch((err) => {
-                    console.log(err);
-                    status.done = false;
-                    status.message = "Unable to leave session";
-                    status.error = err;
-                });
+                                status.message = "An admin cannot leave the session."
+                            }
+                        } else {
+                            status.done = false;
+                            status.message =
+                                "You can't leave a session you're not a part of.";
+                        }
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                        status.done = false;
+                        status.message = "Unable to leave session";
+                        status.error = err;
+                    });
+            } else {
+                status.done = false;
+                status.message = "Are you sure you're registered?";
+            }
         });
         return status;
     }

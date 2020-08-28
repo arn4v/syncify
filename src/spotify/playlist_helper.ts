@@ -1,7 +1,7 @@
-import axios from "axios";
 import { PlatformInfo, SpotifyInfo, MethodStatus } from "../interfaces/global";
 import { DataHelper } from "../data/data_helper";
 import { RequestsHandler } from "./requests_handler";
+import { RequestStatus } from "../interfaces/spotify";
 
 export async function getPlaylistOrAlbumItems(
     platformInfo: PlatformInfo,
@@ -20,16 +20,17 @@ export async function getPlaylistOrAlbumItems(
         .then(async (spotifyInfo: SpotifyInfo) => {
             if (albumUris.length >= 1) {
                 for (const album of albumUris) {
-                    await RequestsHandler.getAlbumItems(
-                        platformInfo,
-                        spotifyInfo,
-                        album
-                    )
-                        .then((res: string[]) => {
-                            if (res.length > 0) {
-                                res.forEach((track) => {
-                                    returnUris.push(track);
-                                });
+                    await RequestsHandler.getAlbumItems(spotifyInfo, album)
+                        .then((res: RequestStatus) => {
+                            if (res.successfull) {
+                                if (
+                                    res.uris !== undefined &&
+                                    res.uris.length > 0
+                                ) {
+                                    res.uris.forEach((track: string) => {
+                                        returnUris.push(track);
+                                    });
+                                }
                             }
                         })
                         .catch((error) => console.log(error));
@@ -39,13 +40,12 @@ export async function getPlaylistOrAlbumItems(
             if (playlistUris.length >= 1) {
                 for (const playlist of playlistUris) {
                     await RequestsHandler.getPlaylistItems(
-                        platformInfo,
                         spotifyInfo,
                         playlist
                     )
-                        .then((res: string[]) => {
-                            if (res.length > 0) {
-                                res.forEach((track) => {
+                        .then((res: RequestStatus) => {
+                            if (res.uris !== undefined && res.uris.length > 0) {
+                                res.uris.forEach((track) => {
                                     returnUris.push(track);
                                 });
                             }

@@ -5,154 +5,134 @@ import {
     PlatformInfo,
     SpotifyInfo,
 } from "../interfaces/global";
-import { Track } from "../interfaces/spotify";
+import { RequestStatus } from "../interfaces/spotify";
 import { RequestsHandler } from "./requests_handler";
 
-async function getAdminTrackInfo(platformInfo: PlatformInfo) {
-    let trackInfo: Track = Object();
-    await DataHelper.fetchSpotifyTokens(platformInfo).then(
-        async (spotifyInfo: SpotifyInfo) => {
-            await RequestsHandler.trackInfo(platformInfo, spotifyInfo)
-                .then((status: MethodStatus) => {
-                    trackInfo = status.data;
-                })
-                .catch((error: Error) => {
-                    console.log(error);
-                });
-        }
-    );
-    return trackInfo ?? undefined;
+async function fetchAndRequest(
+    platformInfo: PlatformInfo,
+    position_ms: number
+): Promise<boolean> {
+    let done: boolean = false;
+    await DataHelper.fetchSpotifyTokens(platformInfo)
+        .then(async (spotifyInfo: SpotifyInfo) => {
+            await RequestsHandler.togglePlayback(spotifyInfo, 2).then(
+                async (res: RequestStatus) => {
+                    if (res.isRefreshed && res.newAccessToken !== undefined) {
+                        DataHelper.updateSpotifyAccessToken(
+                            res?.newAccessToken,
+                            platformInfo
+                        );
+                        spotifyInfo.spotifyAccessToken = res.newAccessToken;
+                    }
+                    await RequestsHandler.seek(spotifyInfo, position_ms).then(
+                        async (_res: RequestStatus) => {
+                            if (res.successfull && _res.successfull) {
+                                done = true;
+                            } else {
+                                done = false;
+                            }
+                            await RequestsHandler.togglePlayback(
+                                spotifyInfo,
+                                1
+                            );
+                        }
+                    );
+                }
+            );
+        })
+        .catch(() => {
+            done = false;
+        });
+    return done;
 }
 
-export async function syncSession(platformInfo: any): Promise<MethodStatus> {
+export async function syncSession(
+    platformInfo: PlatformInfo
+): Promise<MethodStatus> {
     let status: MethodStatus = {
         done: undefined,
         message: undefined,
     };
 
     await DataHelper.doesUserExist(platformInfo)
-        .then(async (user: UserInfo) => {
+        .then(async (user?: UserInfo) => {
             if (user?.exists) {
-                if (user?.inSession) {
-                    await DataHelper.doesSessionExist(platformInfo)
-                        .then(async (res: MethodStatus) => {
-                            if (res.done) {
+                await DataHelper.doesSessionExist(platformInfo).then(
+                    async (session: MethodStatus) => {
+                        if (session.done) {
+                            if (user?.inSession) {
                                 if (
-                                    user.sessionInfo?.id == res.data.sessionId
+                                    user?.sessionInfo?.id ===
+                                    session.data.sessionId
                                 ) {
-                                    let members: Array<string> = JSON.parse(
-                                        res.data.members
+                                    let members: string[] = JSON.parse(
+                                        session.data.members
                                     );
-                                    let admin: string = res.data.createdBy;
-
-                                    for (const member of members) {
-                                        let platInfo = platformInfo;
-                                        platInfo.type == 1
-                                            ? (platInfo.discordUserId = member)
-                                            : (platInfo.telegramUserId = member);
-                                        await DataHelper.fetchSpotifyTokens(
-                                            platInfo
-                                        )
-                                            .then(
-                                                async (
-                                                    spotifyInfo: SpotifyInfo
-                                                ) => {
-                                                    await RequestsHandler.togglePlayback(
-                                                        platInfo,
-                                                        spotifyInfo,
-                                                        2
-                                                    ).catch(() => {
-                                                        status.done = false;
-                                                        status.message =
-                                                            "Unable to sync session";
+                                    let admin: string = session.data.createdBy;
+                                    let adminPlatformInfo: PlatformInfo = platformInfo;
+                                    platformInfo.type == 1
+                                        ? (adminPlatformInfo.discordUserId = admin)
+                                        : (adminPlatformInfo.telegramUserId = admin);
+                                    await DataHelper.fetchSpotifyTokens(
+                                        adminPlatformInfo
+                                    ).then(async (spotifyInfo: SpotifyInfo) => {
+                                        await RequestsHandler.trackInfo(
+                                            spotifyInfo
+                                        ).then(async (res: RequestStatus) => {
+                                            let position: number | undefined =
+                                                res?.trackInfo?.position;
+                                            let logs: boolean[] = [];
+                                            if (position != undefined) {
+                                                for (const member of members) {
+                                                    const memberPlatformInfo: PlatformInfo = platformInfo;
+                                                    platformInfo.type == 1
+                                                        ? (memberPlatformInfo.discordUserId = member)
+                                                        : (memberPlatformInfo.telegramGroupId = member);
+                                                    await fetchAndRequest(
+                                                        memberPlatformInfo,
+                                                        position
+                                                    ).then((done: boolean) => {
+                                                        logs.push(done);
                                                     });
                                                 }
-                                            )
-                                            .catch(() => {
-                                                status.done = false;
-                                                status.message =
-                                                    "Unable to sync session";
-                                            });
-                                    }
-
-                                    let adminPlatInfo = platformInfo;
-                                    adminPlatInfo.type == 1
-                                        ? (adminPlatInfo.discordUserId = admin)
-                                        : (adminPlatInfo.telegramUserId = admin);
-
-                                    await getAdminTrackInfo(adminPlatInfo)
-                                        .then(async (trackInfo: Track) => {
-                                            if (trackInfo != undefined) {
-                                                let position: number = trackInfo?.position as number;
-                                                for (const member of members) {
-                                                    let platInfo = platformInfo;
-                                                    platInfo.type == 1
-                                                        ? (platInfo.discordUserId = member)
-                                                        : (platInfo.telegramUserId = member);
-
-                                                    await DataHelper.fetchSpotifyTokens(
-                                                        platInfo
-                                                    )
-                                                        .then(
-                                                            async (
-                                                                spotifyInfo: SpotifyInfo
-                                                            ) => {
-                                                                await RequestsHandler.seek(
-                                                                    platInfo,
-                                                                    spotifyInfo,
-                                                                    position
-                                                                );
-                                                                await RequestsHandler.togglePlayback(
-                                                                    platInfo,
-                                                                    spotifyInfo,
-                                                                    1
-                                                                ).catch(() => {
-                                                                    status.done = false;
-                                                                    status.message =
-                                                                        "Unable to sync session";
-                                                                });
-                                                            }
-                                                        )
-                                                        .catch(() => {
-                                                            status.done = false;
-                                                            status.message =
-                                                                "Unable to sync session";
-                                                        });
+                                                if (!logs.includes(false)) {
+                                                    status.done = true;
+                                                    status.message =
+                                                        "Synced every user in the session";
+                                                } else {
+                                                    status.done = false;
+                                                    status.message =
+                                                        "Unable to sync some users, try running sync command again";
                                                 }
-                                            } else {
-                                                status.done = false;
-                                                status.message =
-                                                    "Unable to sync session";
                                             }
-                                        })
-                                        .catch((error) => {
-                                            console.log(error);
-                                            status.done = false;
-                                            status.message =
-                                                "Unable to sync session";
                                         });
+                                    });
+                                } else {
+                                    status.done = false;
+                                    status.message =
+                                        "You're in a different session, use the leave command to leave it.";
                                 }
                             } else {
                                 status.done = false;
                                 status.message =
-                                    "You are in a different session. Please use the leave command to leave that session.";
+                                    "Enroll yourself in a session first.";
                             }
-                        })
-                        .catch((error) => {
-                            console.log(error);
+                        } else {
                             status.done = false;
-                            status.message =
-                                "No session exists in group/server";
-                        });
-                } else {
-                    status.done = false;
-                    status.message = "Please create or join a session first.";
-                }
+                            status.message = "Please create a session first.";
+                        }
+                    }
+                );
             } else {
                 status.done = false;
-                status.message = "Please register first.";
+                status.message =
+                    "Unable to find you in the database. Are you sure you registered?";
             }
         })
-        .catch();
+        .catch(() => {
+            status.done = false;
+            status.message =
+                "Unable to fetch user info, are you sure you are registered?";
+        });
     return status;
 }

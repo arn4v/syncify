@@ -1,11 +1,43 @@
-import axios from "axios";
 import { DataHelper } from "../data/data_helper";
-import { MethodStatus, UserInfo } from "../interfaces/global";
+import {
+    MethodStatus,
+    PlatformInfo,
+    SpotifyInfo,
+    UserInfo,
+} from "../interfaces/global";
+import { RequestStatus } from "../interfaces/spotify";
 import { RequestsHandler } from "./requests_handler";
 
+async function fetchAndRequest(platformInfo: PlatformInfo, requestType: 1 | 2) {
+    let done = false;
+    await DataHelper.fetchSpotifyTokens(platformInfo).then(
+        async (spotifyInfo: SpotifyInfo) => {
+            await RequestsHandler.nextPreviousTrack(spotifyInfo, requestType)
+                .then(async (res: RequestStatus) => {
+                    if (res.successfull) {
+                        done = true;
+                    } else {
+                        done = false;
+                    }
+
+                    if (res.isRefreshed && res.newAccessToken != undefined) {
+                        DataHelper.updateSpotifyAccessToken(
+                            res.newAccessToken,
+                            platformInfo
+                        );
+                    }
+                })
+                .catch(() => {
+                    done = false;
+                });
+        }
+    );
+    return done;
+}
+
 export async function nextPreviousTrack(
-    platformInfo: any,
-    requestType: number
+    platformInfo: PlatformInfo,
+    requestType: 1 | 2
 ): Promise<MethodStatus> {
     let status: MethodStatus = {
         done: undefined,
@@ -14,11 +46,14 @@ export async function nextPreviousTrack(
 
     await DataHelper.doesUserExist(platformInfo)
         .then(async (user: UserInfo) => {
-            if (user.exists) {
-                if (user.inSession) {
-                    await DataHelper.doesSessionExist(platformInfo)
-                        .then(async (_res: MethodStatus) => {
-                            if (_res.done) {
+            if (user?.exists) {
+                await DataHelper.doesSessionExist(platformInfo)
+                    .then(async (_res: MethodStatus) => {
+                        if (_res.done) {
+                            if (
+                                user?.inSession &&
+                                user.sessionInfo?.id === _res.data.sessionId
+                            ) {
                                 let members: string[] = JSON.parse(
                                     _res.data.members
                                 );
@@ -28,12 +63,12 @@ export async function nextPreviousTrack(
                                         platInfo.type == 1
                                             ? (platInfo.discordUserId = member)
                                             : (platInfo.telegramUserId = member);
-                                        await RequestsHandler.nextPreviousTrack(
+                                        await fetchAndRequest(
                                             platInfo,
                                             requestType
                                         )
-                                            .then(() => {
-                                                status.done = true;
+                                            .then((done: boolean) => {
+                                                status.done = done;
                                                 status.message =
                                                     requestType == 1
                                                         ? "Skipped to next track for the session"
@@ -49,40 +84,21 @@ export async function nextPreviousTrack(
                                         "Unable to skip track for the session";
                                 }
                             } else {
-                                await RequestsHandler.nextPreviousTrack(
-                                    platformInfo,
-                                    requestType
-                                )
-                                    .then((__res: MethodStatus) => {
-                                        if (__res.done == true) {
-                                            status.done = true;
-                                            status.message =
-                                                requestType == 1
-                                                    ? "Skipped to next track."
-                                                    : "Going back to previous track.";
-                                        } else {
-                                            status.done = false;
-                                            status.message =
-                                                "Unable to skip/go back track.";
-                                        }
-                                    })
-                                    .catch((error) => {
-                                        console.log(error);
-                                        status.done = false;
-                                        status.message =
-                                            "Unable to skip/go back track.";
-                                    });
+                                status.done = false;
+                                status.message =
+                                    "You are in a different session, use the leave command to leave that session.";
                             }
-                        })
-                        .catch((error) => {
-                            console.log(error);
+                        } else {
                             status.done = false;
-                            status.message = "Unable to skip/go back track";
-                        });
-                } else {
-                    status.done = false;
-                    status.message = "Please start/join a session first.";
-                }
+                            status.message =
+                                "Please start/join a session first.";
+                        }
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                        status.done = false;
+                        status.message = "Unable to skip/go back track";
+                    });
             } else {
                 status.done = false;
                 status.message = "Please register first.";

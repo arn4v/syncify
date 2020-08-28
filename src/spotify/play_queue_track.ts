@@ -10,7 +10,7 @@ import { getPlaylistOrAlbumItems } from "./playlist_helper";
 import { RequestsHandler } from "./requests_handler";
 import { RequestStatus } from "../interfaces/spotify";
 
-async function fetchAndQuery(
+async function fetchAndRequest(
     platformInfo: PlatformInfo,
     tracks: string[],
     type: "queue" | "play"
@@ -118,7 +118,7 @@ export async function playOrAddToQueue(
                                             }
                                         });
                                     }
-                                    await fetchAndQuery(
+                                    await fetchAndRequest(
                                         platformInfo,
                                         uris,
                                         res.data.playInstant ? "play" : "queue"
@@ -127,8 +127,8 @@ export async function playOrAddToQueue(
                                             status.done = _res;
                                             status.message = res.data
                                                 .playInstant
-                                                ? successful_queue_session
-                                                : successful_play_session;
+                                                ? successful_play_session
+                                                : successful_queue_session;
                                         })
                                         .catch((error: string) => {
                                             console.log(error);
@@ -139,7 +139,7 @@ export async function playOrAddToQueue(
                                                 : unsuccessful_queue_session;
                                         });
 
-                                    if (res.data.playInstant) {
+                                    if (res.data.playInstant === true) {
                                         await DataHelper.updatePlayInstantStatus(
                                             platformInfo
                                         ).catch((error: string) =>

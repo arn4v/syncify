@@ -8,7 +8,7 @@ import {
 import { RequestsHandler } from "./requests_handler";
 import { ShuffleRepeatState, RequestStatus } from "../interfaces/spotify";
 
-async function fetchAndQuery(
+async function fetchAndRequest(
     platformInfo: PlatformInfo,
     toggleState: ShuffleRepeatState,
     requestType: number
@@ -64,7 +64,7 @@ export async function toggleShuffleRepeat(
                                             platInfo.type == 1
                                                 ? (platInfo.discordUserId = member)
                                                 : (platInfo.telegramUserId = member);
-                                            await fetchAndQuery(
+                                            await fetchAndRequest(
                                                 platInfo,
                                                 toggleState,
                                                 requestType
@@ -75,14 +75,28 @@ export async function toggleShuffleRepeat(
                                         status.done = true;
                                         status.message =
                                             requestType == 1
-                                                ? "Shuffled playback for this session"
+                                                ? `${
+                                                      toggleState == true
+                                                          ? "Shuffled"
+                                                          : "Unshuffled"
+                                                  } playback for this session`
+                                                : toggleState == "off"
+                                                ? "Disabled repeat for the session"
                                                 : "Put playback on repeat for the session.";
                                     } catch (err) {
                                         if (err) status.done = false;
                                         status.message =
                                             requestType == 1
-                                                ? `Unable to shuffle playback for session`
-                                                : "Unable to put playback on repeat for session";
+                                                ? `Unable to ${
+                                                      toggleState == false
+                                                          ? "disable shuffle"
+                                                          : "shuffle playback"
+                                                  } for session`
+                                                : `Unable to ${
+                                                      toggleState == "off"
+                                                          ? "disable repeat"
+                                                          : "put playback on repeat"
+                                                  } for session`;
                                     }
                                 } else {
                                     status.done = false;

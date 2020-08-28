@@ -29,4 +29,6 @@ export interface RequestStatus {
     error: any | undefined;
     isRefreshed: boolean | undefined;
     newAccessToken?: string;
+    uris?: string[];
+    trackInfo?: Track;
 }

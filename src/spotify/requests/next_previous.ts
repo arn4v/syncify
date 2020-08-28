@@ -1,13 +1,17 @@
 import Axios from "axios";
+import { RequestStatus } from "../../interfaces/spotify";
 import { SpotifyInfo } from "../../interfaces/global";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_tokens";
-import { RequestStatus } from "../../interfaces/spotify";
 
-export async function queueRequest(
+export async function nextPreviousTrackRequest(
     spotifyInfo: SpotifyInfo,
-    trackUri: string
+    request_type: number
 ): Promise<RequestStatus> {
+    const request_url: string =
+        request_type == 1
+            ? endpoints.next_track.url
+            : endpoints.previous_track.url;
     let status: RequestStatus = {
         successfull: false,
         status: undefined,
@@ -15,24 +19,17 @@ export async function queueRequest(
         response: undefined,
         isRefreshed: false,
     };
-    const request_url: string = endpoints.add_to_queue.url;
-    let new_access_token: string;
-    let access_token: string = spotifyInfo.spotifyAccessToken;
+
     await Axios({
         url: request_url,
         method: "post",
         headers: {
-            Authorization: "Bearer " + access_token,
-        },
-        params: {
-            uri: trackUri,
+            Authorization: "Bearer " + spotifyInfo.spotifyAccessToken,
         },
     })
         .then((res) => {
-            res.status == 204
-                ? (status.successfull = true)
-                : (status.successfull = false);
             status.status = res.status;
+            if (res.status == 204) status.successfull = true;
         })
         .catch(async (error) => {
             if (error.response.status == 401) {
@@ -44,27 +41,21 @@ export async function queueRequest(
                             url: request_url,
                             method: "put",
                             headers: {
-                                Authorization: "Bearer " + new_access_token,
+                                Authorization: "Bearer " + newAccessToken,
                             },
                         })
-                            .then((_res: any) => {
+                            .then((_res) => {
+                                status.status = _res.status;
                                 if (_res.status == 204) {
                                     status.successfull = true;
-                                    status.status = _res.status;
-                                } else {
-                                    status.status = error.response.status;
-                                    status.error = error.response;
                                 }
                             })
-                            .catch((_error: any) => {
-                                status.successfull = false;
-                                status.status = _error.response.status;
-                                status.error = _error;
+                            .catch((_error) =>
                                 console.log(
-                                    "Error: resumePausePlayback: Second axios call: ",
+                                    "Error: nextPreviousTrack: Second Axios call: ",
                                     _error
-                                );
-                            });
+                                )
+                            );
                     }
                 );
             } else {

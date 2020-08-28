@@ -1,7 +1,7 @@
 import { DataHelper } from "./data/data_helper";
 import qs from "qs";
 import request from "request";
-import { Router } from "@feathersjs/express";
+import { Router } from "express";
 
 const router: any = Router();
 

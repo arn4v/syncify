@@ -1,7 +1,7 @@
 import * as authUiRouter from "./router";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express from "@feathersjs/express";
+import express from "express";
 import path from "path";
 
 export function startServer() {

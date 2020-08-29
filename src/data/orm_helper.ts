@@ -682,6 +682,7 @@ export class ORMHelper {
                         if (
                             user.inSession &&
                             user.sessionInfo?.id === session.data.sessionId
+                            //
                         ) {
                             if (user.id !== session.data.createdBy) {
                                 let members = JSON.parse(

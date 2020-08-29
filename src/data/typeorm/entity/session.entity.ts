@@ -1,10 +1,10 @@
-import { Entity, Generated, Column } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn } from "typeorm";
 import { Base } from "./base.entity";
 
 @Entity()
 export class Session extends Base {
-    @Column({ type: "text", unique: true })
-    @Generated("uuid")
+    @PrimaryGeneratedColumn("uuid")
+    // @Column({ type: "text", unique: true })
     sessionId: string;
 
     @Column({ type: "int" })

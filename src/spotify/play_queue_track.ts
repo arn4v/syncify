@@ -72,8 +72,8 @@ export async function playOrAddToQueue(
         message: undefined,
     };
     let successful_play_session: string = "Playing song for the session";
-    let successful_queue_session: string =
-        "Added song to queue for the session";
+    // let successful_queue_session: string =
+    //     "Added song to queue for the session";
     let unsuccessful_play_session: string;
     let unsuccessful_queue_session: string =
         "Unable to add song to queue for the session";
@@ -128,7 +128,11 @@ export async function playOrAddToQueue(
                                             status.message = res.data
                                                 .playInstant
                                                 ? successful_play_session
-                                                : successful_queue_session;
+                                                : `Added ${
+                                                      uris.length == 1
+                                                          ? "song"
+                                                          : `${uris.length} songs`
+                                                  } to queue for the session`;
                                         })
                                         .catch((error: string) => {
                                             console.log(error);

@@ -1,8 +1,11 @@
-import { Entity, Generated, Column } from "typeorm";
+import { Entity, Generated, Column, PrimaryGeneratedColumn } from "typeorm";
 import { Base } from "./base.entity";
 
 @Entity()
 export class User extends Base {
+    @PrimaryGeneratedColumn()
+    id: number;
+
     @Column()
     @Generated("uuid")
     syncifyUserId: string;

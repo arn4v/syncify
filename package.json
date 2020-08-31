@@ -28,7 +28,7 @@
     "firebase": "^7.19.1",
     "reflect-metadata": "^0.1.10",
     "request": "^2.88.2",
-    "sqlite3": "^4.2.0",
+    "sqlite3": "^5.0.0",
     "telegram-bot-api": "^2.0.1",
     "typeorm": "0.2.25"
   },

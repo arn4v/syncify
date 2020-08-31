@@ -5,6 +5,7 @@ import {
     SpotifyInfo,
     UserInfo,
 } from "../interfaces/global";
+import { RequestStatus } from "../interfaces/spotify";
 import { RequestsHandler } from "./requests_handler";
 
 // This function serves to fetch spotify access/refresh token for
@@ -18,11 +19,17 @@ async function fetchAndRequest(
     await DataHelper.fetchSpotifyTokens(platformInfo)
         .then(async (spotifyInfo: SpotifyInfo) => {
             await RequestsHandler.seek(spotifyInfo, position_ms)
-                .then((res) => {
+                .then((res: RequestStatus) => {
                     if (res.successfull) {
                         done = true;
                     } else {
                         done = false;
+                    }
+                    if (res.isRefreshed && res.newAccessToken != undefined) {
+                        DataHelper.updateSpotifyAccessToken(
+                            res.newAccessToken,
+                            platformInfo
+                        );
                     }
                 })
                 .catch(() => (done = false));

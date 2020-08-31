@@ -1,8 +1,9 @@
-import Axios from "axios";
+import Axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { RequestStatus } from "../../interfaces/spotify";
 import { SpotifyInfo } from "../../interfaces/global";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_tokens";
+import { defaultStatusTemplate } from "../../helpers/status_template";
 
 export async function nextPreviousTrackRequest(
     spotifyInfo: SpotifyInfo,
@@ -12,38 +13,31 @@ export async function nextPreviousTrackRequest(
         request_type == 1
             ? endpoints.next_track.url
             : endpoints.previous_track.url;
-    let status: RequestStatus = {
-        successfull: false,
-        status: undefined,
-        error: undefined,
-        response: undefined,
-        isRefreshed: false,
+    const requestConfig: (accessToken: string) => AxiosRequestConfig = (
+        accessToken: string
+    ): AxiosRequestConfig => {
+        return {
+            url: request_url,
+            method: "post",
+            headers: {
+                Authorization: `Bearer ${accessToken}}`,
+            },
+        };
     };
+    let status: RequestStatus = defaultStatusTemplate;
 
-    await Axios({
-        url: request_url,
-        method: "post",
-        headers: {
-            Authorization: "Bearer " + spotifyInfo.spotifyAccessToken,
-        },
-    })
-        .then((res) => {
+    await Axios(requestConfig(spotifyInfo.spotifyAccessToken))
+        .then((res: AxiosResponse) => {
             status.status = res.status;
             if (res.status == 204) status.successfull = true;
         })
-        .catch(async (error) => {
-            if (error.response.status == 401) {
+        .catch(async (error: AxiosError) => {
+            if (error.response?.status == 401) {
                 await refreshAccessToken(spotifyInfo.spotifyRefreshToken).then(
                     async (newAccessToken: string) => {
                         status.isRefreshed = true;
                         status.newAccessToken = newAccessToken;
-                        await Axios({
-                            url: request_url,
-                            method: "put",
-                            headers: {
-                                Authorization: "Bearer " + newAccessToken,
-                            },
-                        })
+                        await Axios(requestConfig(newAccessToken))
                             .then((_res) => {
                                 status.status = _res.status;
                                 if (_res.status == 204) {
@@ -59,8 +53,9 @@ export async function nextPreviousTrackRequest(
                     }
                 );
             } else {
+                console.trace();
                 console.log(
-                    `ERROR: SpotifyHelper.resumePlayback: ${error.response.status}`
+                    `ERROR: nextPreviousTrackRequest:54: ${error.response?.status}`
                 );
                 status.successfull = false;
             }

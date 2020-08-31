@@ -1,38 +1,38 @@
-import axios from "axios";
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { ShuffleRepeatState, RequestStatus } from "../../interfaces/spotify";
 import { SpotifyInfo } from "../../interfaces/global";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_tokens";
+import { defaultStatusTemplate } from "../../helpers/status_template";
 
 export async function toggleShuffleRepeatRequest(
     requestType: number,
     toggleState: ShuffleRepeatState,
     spotifyInfo: SpotifyInfo
 ): Promise<RequestStatus> {
-    let requestUrl: string =
+    const request_url: string =
         requestType == 1
             ? endpoints.shuffle_playback.url
             : endpoints.repeat_playback.url;
 
     // Can probably unify response and error since they serve the same
     // purpose
-    let status: RequestStatus = {
-        successfull: false,
-        status: undefined,
-        response: undefined,
-        error: undefined,
-        isRefreshed: false,
+    let status: RequestStatus = defaultStatusTemplate;
+    let requestConfig: (accessToken: string) => AxiosRequestConfig = (
+        accessToken: string
+    ): AxiosRequestConfig => {
+        return {
+            method: "put",
+            url: request_url,
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+            params: { state: toggleState },
+        };
     };
 
-    await axios({
-        method: "put",
-        url: requestUrl,
-        headers: {
-            Authorization: `Bearer ${spotifyInfo.spotifyAccessToken}`,
-        },
-        params: { state: toggleState },
-    })
-        .then(async (res: any) => {
+    await axios(requestConfig(spotifyInfo.spotifyAccessToken))
+        .then(async (res: AxiosResponse) => {
             status.response = res.data;
             if (res.status == (200 || 201 || 204)) {
                 status.status = res.status;
@@ -40,14 +40,9 @@ export async function toggleShuffleRepeatRequest(
             } else if (res.status == (400 || 401)) {
                 await refreshAccessToken(spotifyInfo.spotifyRefreshToken).then(
                     async (newAccessToken: string) => {
-                        await axios({
-                            method: "put",
-                            url: requestUrl,
-                            headers: {
-                                Authorization: `Bearer ${newAccessToken}`,
-                            },
-                            params: { state: toggleState },
-                        })
+                        status.isRefreshed = true;
+                        status.newAccessToken = newAccessToken;
+                        await axios(requestConfig(newAccessToken))
                             .then(async (_res: any) => {
                                 status.status = res.status;
                                 status.response = _res.data;
@@ -65,7 +60,7 @@ export async function toggleShuffleRepeatRequest(
                 );
             }
         })
-        .catch((error) => {
+        .catch((error: AxiosError) => {
             status.error = error;
             console.log(`ERROR: toggleShuffle: ${error}`);
         });

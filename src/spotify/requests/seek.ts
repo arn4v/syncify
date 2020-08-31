@@ -1,79 +1,61 @@
-import axios from "axios";
+import axios, { AxiosRequestConfig, AxiosError, AxiosResponse } from "axios";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_tokens";
-import {
-    MethodStatus,
-    PlatformInfo,
-    SpotifyInfo,
-} from "../../interfaces/global";
+import { SpotifyInfo } from "../../interfaces/global";
 import { RequestStatus } from "../../interfaces/spotify";
+import { defaultStatusTemplate } from "../../helpers/status_template";
 
 export async function seekRequest(
     spotifyInfo: SpotifyInfo,
     position_ms: number | undefined
 ): Promise<RequestStatus> {
-    let status: RequestStatus = {
-        successfull: false,
-        status: undefined,
-        error: undefined,
-        response: undefined,
-        isRefreshed: false,
-    };
-
     const request_url: string = endpoints.seek.url;
-    let access_token: string | undefined = spotifyInfo.spotifyAccessToken;
-
-    if (position_ms != undefined) {
-        await axios({
+    let status: RequestStatus = defaultStatusTemplate;
+    let requestConfig: (accessToken: string) => AxiosRequestConfig = (
+        accessToken: string
+    ): AxiosRequestConfig => {
+        return {
             url: request_url,
             method: "put",
             headers: {
-                Authorization: "Bearer " + access_token,
+                Authorization: "Bearer " + accessToken,
             },
             params: {
                 position_ms: position_ms,
             },
-        })
-            .then((res) => {
+        };
+    };
+
+    if (position_ms != undefined) {
+        await axios(requestConfig(spotifyInfo.spotifyAccessToken))
+            .then((res: AxiosResponse) => {
                 res.status == 204
                     ? (status.successfull = true)
                     : (status.successfull = false);
             })
-            .catch(async (error) => {
+            .catch(async (error: AxiosError) => {
                 status.error = error;
-                status.status = error.response.status;
-                if (error.response.status == 401) {
+                status.status = error.response?.status;
+                if (error.response?.status == 401) {
                     await refreshAccessToken(
                         spotifyInfo.spotifyRefreshToken
                     ).then(async (newAccessToken: string) => {
-                        await axios({
-                            url: request_url,
-                            method: "put",
-                            headers: {
-                                Authorization: "Bearer " + newAccessToken,
-                            },
-                            params: {
-                                position_ms: position_ms,
-                            },
-                        })
-                            .then((_res) => {
+                        status.isRefreshed = true;
+                        status.newAccessToken = newAccessToken;
+                        await axios(requestConfig(newAccessToken)).then(
+                            (_res: AxiosResponse) => {
                                 status.status = _res.status;
                                 status.response = _res.data;
                                 if (_res.status == 204) {
                                     status.error = undefined;
                                     status.successfull = true;
                                 }
-                            })
-                            .catch((_error) =>
-                                console.log(
-                                    "Error: resumePausePlayback: Second axios call: ",
-                                    _error
-                                )
-                            );
+                            }
+                        );
                     });
                 } else {
                     console.log(
-                        `ERROR: SpotifyHelper.resumePlayback: ${error.response.status}`
+                        `ERROR: seekRequest:66: Unknown status error ${error.response?.status}`
                     );
                 }
             });

@@ -32,6 +32,15 @@ export async function getPlaylistOrAlbumItems(
                                     });
                                 }
                             }
+                            if (
+                                res.isRefreshed &&
+                                res.newAccessToken != undefined
+                            ) {
+                                DataHelper.updateSpotifyAccessToken(
+                                    res.newAccessToken,
+                                    platformInfo
+                                );
+                            }
                         })
                         .catch((error) => console.log(error));
                 }

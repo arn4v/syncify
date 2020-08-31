@@ -1,7 +1,8 @@
-import axios from "axios";
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { SpotifyInfo } from "../../interfaces/global";
 import { refreshAccessToken } from "./refresh_tokens";
 import { RequestStatus } from "../../interfaces/spotify";
+import { defaultStatusTemplate } from "../../helpers/status_template";
 
 export async function playlistAlbumItemsRequest(
     spotifyInfo: SpotifyInfo,
@@ -16,21 +17,20 @@ export async function playlistAlbumItemsRequest(
         type == 1 ? "albums" : "playlists"
     }/${id}/tracks`;
     let uris: string[] = [];
-    let status: RequestStatus = {
-        successfull: false,
-        status: undefined,
-        error: undefined,
-        response: undefined,
-        isRefreshed: false,
+    let status: RequestStatus = defaultStatusTemplate;
+    let requestConfig: (accessToken: string) => AxiosRequestConfig = (
+        accessToken: string
+    ): AxiosRequestConfig => {
+        return {
+            method: "get",
+            url: requestUrl,
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        };
     };
 
-    await axios({
-        method: "get",
-        url: requestUrl,
-        headers: {
-            Authorization: `Bearer ${spotifyInfo.spotifyAccessToken}`,
-        },
-    })
+    await axios(requestConfig)
         .then(async (res: any) => {
             if (res.status == 200) {
                 status.successfull = true;
@@ -48,34 +48,31 @@ export async function playlistAlbumItemsRequest(
                     async (newAccessToken: string) => {
                         status.isRefreshed = true;
                         status.newAccessToken = newAccessToken;
-                        await axios({
-                            method: "get",
-                            url: requestUrl,
-                            headers: {
-                                Authorization: `Bearer ${newAccessToken}`,
-                            },
-                        }).then((_res: any) => {
-                            status.status = _res.status;
-                            status.response = _res.data;
-                            if (_res.status == 200) {
-                                status.successfull = true;
-                                _res.data.items.forEach((track: any) => {
-                                    if (type == 1) {
-                                        uris.push(track.uri);
-                                    } else if (type == 2) {
-                                        uris.push(track.track.uri);
-                                    }
-                                });
+                        spotifyInfo.spotifyAccessToken = newAccessToken;
+                        await axios(requestConfig).then(
+                            (_res: AxiosResponse) => {
+                                status.status = _res.status;
+                                status.response = _res.data;
+                                if (_res.status == 200) {
+                                    status.successfull = true;
+                                    _res.data.items.forEach((track: any) => {
+                                        if (type == 1) {
+                                            uris.push(track.uri);
+                                        } else if (type == 2) {
+                                            uris.push(track.track.uri);
+                                        }
+                                    });
+                                }
                             }
-                        });
+                        );
                     }
                 );
             }
         })
-        .catch(async (error) => {
+        .catch(async (error: AxiosError) => {
             status.successfull = false;
             status.error = error;
-            if (error.response.status == 400 || error.response.status == 401) {
+            if (error.response?.status == (400 || 401)) {
                 await refreshAccessToken(spotifyInfo.spotifyRefreshToken).then(
                     async (newAccessToken: string) => {
                         status.isRefreshed = true;
@@ -85,7 +82,7 @@ export async function playlistAlbumItemsRequest(
                             headers: {
                                 Authorization: `Bearer ${newAccessToken}`,
                             },
-                        }).then((_res: any) => {
+                        }).then((_res: AxiosResponse) => {
                             status.status = _res.status;
                             status.response = _res.data;
                             if (_res.status == (200 || 201)) {

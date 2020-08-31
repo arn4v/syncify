@@ -13,7 +13,9 @@ module.exports = {
             user_id: message?.member?.id,
         };
         const accessURL = `> ${SERVER_URL}/?${querystring.stringify(qParams)}`;
-        client.users.cache.get(message?.member?.id).send(_greet + '\n' + accessURL);
+        client.users.cache
+            .get(message?.member?.id)
+            .send(_greet + "\n" + accessURL);
         message.reply(
             `Hello, please look for a DM from the bot that contains the unique registration link`
         );

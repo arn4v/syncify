@@ -734,7 +734,8 @@ export class ORMHelper {
                                 }
                             } else {
                                 status.done = false;
-                                status.message = "An admin cannot leave the session."
+                                status.message =
+                                    "An admin cannot leave the session.";
                             }
                         } else {
                             status.done = false;

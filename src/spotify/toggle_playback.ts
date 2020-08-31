@@ -26,6 +26,12 @@ async function fetchAndRequest(
                     } else {
                         done = false;
                     }
+                    if (res.isRefreshed && res.newAccessToken != undefined) {
+                        DataHelper.updateSpotifyAccessToken(
+                            res.newAccessToken,
+                            platformInfo
+                        );
+                    }
                 })
                 .catch(() => (done = false));
         })

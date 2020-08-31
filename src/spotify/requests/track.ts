@@ -1,21 +1,16 @@
-import Axios from "axios";
+import Axios, { AxiosRequestConfig } from "axios";
 import { SpotifyInfo } from "../../interfaces/global";
 import { refreshAccessToken } from "./refresh_tokens";
 import { endpoints } from "./endpoints";
 import { RequestStatus, Track } from "../../interfaces/spotify";
+import { defaultStatusTemplate } from "../../helpers/status_template";
 
 export async function trackInfoRequest(
     spotifyInfo: SpotifyInfo
 ): Promise<RequestStatus> {
     const request_url: string = endpoints.current_track.url;
 
-    let status: RequestStatus = {
-        successfull: false,
-        status: undefined,
-        error: undefined,
-        response: undefined,
-        isRefreshed: false,
-    };
+    let status: RequestStatus = defaultStatusTemplate;
 
     let trackInfo: Track = {
         name: undefined,
@@ -25,13 +20,19 @@ export async function trackInfoRequest(
         artists: [],
     };
 
-    await Axios({
-        method: "get",
-        url: request_url,
-        headers: {
-            Authorization: `Bearer ${spotifyInfo.spotifyAccessToken}`,
-        },
-    })
+    let requestConfig: (accessToken: string) => AxiosRequestConfig = (
+        accessToken: string
+    ): AxiosRequestConfig => {
+        return {
+            method: "get",
+            url: request_url,
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        };
+    };
+
+    await Axios()
         .then(async (response: any) => {
             if (response.status == (200 || 201)) {
                 trackInfo.id = response.data.item.uri;

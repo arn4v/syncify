@@ -6,11 +6,11 @@ checkEnv();
 import { startDiscordBot } from "./bots/discord/bot";
 import { startTelegramBot } from "./bots/telegram/bot";
 import { startServer } from "./server";
-import { ORMHelper } from "./data/orm_helper";
+import {DataHelper} from "./data/data_helper";
 
 startServer();
-ORMHelper.connection();
-ORMHelper.deleteSessions({ onStart: true });
+DataHelper.connection();
+DataHelper.deleteSessions({ onStart: true });
 
 if ((process.env.DISCORD_BOT as string) == "true") {
     startDiscordBot();

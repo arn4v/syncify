@@ -1,12 +1,12 @@
 import { DataHelper } from "../data/data_helper";
+import { RequestsHandler } from "./requests_handler";
 import {
     MethodStatus,
     PlatformInfo,
     SpotifyInfo,
     UserInfo,
-} from "../interfaces/global";
-import { RequestStatus } from "../interfaces/spotify";
-import { RequestsHandler } from "./requests_handler";
+    RequestStatus,
+} from "../interfaces/interfaces";
 
 async function fetchAndRequest(platformInfo: PlatformInfo, requestType: 1 | 2) {
     let done = false;

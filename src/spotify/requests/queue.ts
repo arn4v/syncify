@@ -1,8 +1,7 @@
 import Axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
-import { SpotifyInfo } from "../../interfaces/global";
+import { SpotifyInfo, RequestStatus } from "../../interfaces/interfaces";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_tokens";
-import { RequestStatus } from "../../interfaces/spotify";
 import { defaultStatusTemplate } from "../../helpers/status_template";
 
 export async function queueRequest(

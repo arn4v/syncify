@@ -1,6 +1,5 @@
 import { DataHelper } from "../data/data_helper";
-import { MethodStatus } from "../interfaces/global";
-import { RequestStatus } from "../interfaces/spotify";
+import { MethodStatus, RequestStatus } from "../interfaces/interfaces";
 import { RequestsHandler } from "./requests_handler";
 
 async function fetchAndRequest(platformInfo: any): Promise<MethodStatus> {

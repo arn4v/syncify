@@ -1,5 +1,5 @@
 import { toggleShuffleRepeat } from "../../../spotify/toggle_shuffle_repeat";
-import { PlatformInfo, MethodStatus } from "../../../interfaces/global";
+import { PlatformInfo, MethodStatus } from "../../../interfaces/interfaces";
 
 module.exports = {
     name: "unshuffle",

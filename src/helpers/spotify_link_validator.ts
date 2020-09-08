@@ -1,4 +1,4 @@
-import { MethodStatus } from "../interfaces/global";
+import { MethodStatus } from "../interfaces/interfaces";
 
 function link2UriParser(link: string, type: number): string {
     let typeString: string;

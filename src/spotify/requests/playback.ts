@@ -1,9 +1,8 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-import { RequestStatus } from "../../interfaces/spotify";
-import { SpotifyInfo } from "../../interfaces/global";
+import { RequestStatus, SpotifyInfo } from "../../interfaces/interfaces";
+import { defaultStatusTemplate } from "../../helpers/status_template";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_tokens";
-import { defaultStatusTemplate } from "../../helpers/status_template";
 
 /**
     This function exists purely to be used by other Spotify methods in this

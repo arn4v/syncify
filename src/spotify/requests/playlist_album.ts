@@ -1,8 +1,7 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-import { SpotifyInfo } from "../../interfaces/global";
-import { refreshAccessToken } from "./refresh_tokens";
-import { RequestStatus } from "../../interfaces/spotify";
+import { SpotifyInfo, RequestStatus } from "../../interfaces/interfaces";
 import { defaultStatusTemplate } from "../../helpers/status_template";
+import { refreshAccessToken } from "./refresh_tokens";
 
 export async function playlistAlbumItemsRequest(
     spotifyInfo: SpotifyInfo,
@@ -30,7 +29,7 @@ export async function playlistAlbumItemsRequest(
         };
     };
 
-    await axios(requestConfig)
+    await axios(requestConfig(spotifyInfo.spotifyAccessToken))
         .then(async (res: any) => {
             if (res.status == 200) {
                 status.successfull = true;
@@ -49,7 +48,7 @@ export async function playlistAlbumItemsRequest(
                         status.isRefreshed = true;
                         status.newAccessToken = newAccessToken;
                         spotifyInfo.spotifyAccessToken = newAccessToken;
-                        await axios(requestConfig).then(
+                        await axios(requestConfig(newAccessToken)).then(
                             (_res: AxiosResponse) => {
                                 status.status = _res.status;
                                 status.response = _res.data;

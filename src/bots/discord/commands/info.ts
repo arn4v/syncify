@@ -1,5 +1,5 @@
 import { DataHelper } from "../../../data/data_helper";
-import { PlatformInfo, UserInfo } from "../../../interfaces/global";
+import { PlatformInfo, UserInfo } from "../../../interfaces/interfaces";
 
 module.exports = {
     name: "info",

@@ -1,5 +1,4 @@
-import { SpotifyInfo } from "../interfaces/global";
-import { ShuffleRepeatState } from "../interfaces/spotify";
+import { ShuffleRepeatState, SpotifyInfo } from "../interfaces/interfaces";
 import { nextPreviousTrackRequest } from "./requests/next_previous";
 import { playTrackRequest } from "./requests/play";
 import { playlistAlbumItemsRequest } from "./requests/playlist_album";

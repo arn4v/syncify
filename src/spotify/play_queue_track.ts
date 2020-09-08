@@ -1,14 +1,14 @@
 import { DataHelper } from "../data/data_helper";
+import { RequestsHandler } from "./requests_handler";
+import { getPlaylistOrAlbumItems } from "./playlist_helper";
+import { trackLinkValidator } from "../helpers/spotify_link_validator";
 import {
     MethodStatus,
     UserInfo,
     SpotifyInfo,
     PlatformInfo,
-} from "../interfaces/global";
-import { trackLinkValidator } from "../helpers/spotify_link_validator";
-import { getPlaylistOrAlbumItems } from "./playlist_helper";
-import { RequestsHandler } from "./requests_handler";
-import { RequestStatus } from "../interfaces/spotify";
+    RequestStatus,
+} from "../interfaces/interfaces";
 
 async function fetchAndRequest(
     platformInfo: PlatformInfo,

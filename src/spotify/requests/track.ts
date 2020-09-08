@@ -1,9 +1,8 @@
 import Axios, { AxiosRequestConfig } from "axios";
-import { SpotifyInfo } from "../../interfaces/global";
-import { refreshAccessToken } from "./refresh_tokens";
-import { endpoints } from "./endpoints";
-import { RequestStatus, Track } from "../../interfaces/spotify";
+import { SpotifyInfo, RequestStatus, Track } from "../../interfaces/interfaces";
 import { defaultStatusTemplate } from "../../helpers/status_template";
+import { endpoints } from "./endpoints";
+import { refreshAccessToken } from "./refresh_tokens";
 
 export async function trackInfoRequest(
     spotifyInfo: SpotifyInfo
@@ -32,7 +31,7 @@ export async function trackInfoRequest(
         };
     };
 
-    await Axios()
+    await Axios(requestConfig(spotifyInfo.spotifyAccessToken))
         .then(async (response: any) => {
             if (response.status == (200 || 201)) {
                 trackInfo.id = response.data.item.uri;
@@ -64,11 +63,7 @@ export async function trackInfoRequest(
                 .then(async (newAccessToken: string) => {
                     status.isRefreshed = true;
                     status.newAccessToken = newAccessToken;
-                    await Axios({
-                        url: request_url,
-                        method: "get",
-                        headers: newAccessToken,
-                    })
+                    await Axios(requestConfig(newAccessToken))
                         .then((response) => {
                             trackInfo.id = response.data.item.uri;
                             trackInfo.link = response.data.item.link;

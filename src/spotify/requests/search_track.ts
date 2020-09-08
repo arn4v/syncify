@@ -2,7 +2,7 @@ import axios from "axios";
 import { endpoints } from "./endpoints";
 import { DataHelper } from "../../data/data_helper";
 import { refreshAccessToken } from "./refresh_tokens";
-import { PlatformInfo } from "../../interfaces/global";
+import { PlatformInfo } from "../../interfaces/interfaces";
 
 async function searchSpotify(platformInfo: PlatformInfo, query: string) {
     let userId: string | undefined =

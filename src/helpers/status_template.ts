@@ -1,5 +1,4 @@
-import { MethodStatus } from "../interfaces/global";
-import { RequestStatus } from "../interfaces/spotify";
+import { MethodStatus, RequestStatus } from "../interfaces/interfaces";
 
 export let defaultStatusTemplate: RequestStatus = {
     successfull: false,

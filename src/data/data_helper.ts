@@ -1,5 +1,5 @@
 import { ORMHelper } from "./orm_helper";
-import { PlatformInfo } from "../interfaces/global";
+import { PlatformInfo } from "../interfaces/interfaces";
 
 // TODO: Assign types of databases a number. For example:
 // 1: Firebase

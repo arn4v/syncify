@@ -1,7 +1,11 @@
-import { PlatformInfo, SpotifyInfo, MethodStatus } from "../interfaces/global";
 import { DataHelper } from "../data/data_helper";
+import {
+    PlatformInfo,
+    SpotifyInfo,
+    RequestStatus,
+    MethodStatus,
+} from "../interfaces/interfaces";
 import { RequestsHandler } from "./requests_handler";
-import { RequestStatus } from "../interfaces/spotify";
 
 export async function getPlaylistOrAlbumItems(
     platformInfo: PlatformInfo,

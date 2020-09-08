@@ -1,9 +1,12 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-import { ShuffleRepeatState, RequestStatus } from "../../interfaces/spotify";
-import { SpotifyInfo } from "../../interfaces/global";
+import { defaultStatusTemplate } from "../../helpers/status_template";
 import { endpoints } from "./endpoints";
 import { refreshAccessToken } from "./refresh_tokens";
-import { defaultStatusTemplate } from "../../helpers/status_template";
+import {
+    RequestStatus,
+    ShuffleRepeatState,
+    SpotifyInfo,
+} from "../../interfaces/interfaces";
 
 export async function toggleShuffleRepeatRequest(
     requestType: number,

@@ -1,3 +1,30 @@
+export interface SpotifyInfo {
+    spotifyAccessToken: string;
+    spotifyRefreshToken: string;
+}
+
+export interface PlatformInfo {
+    type: number;
+    discordUserId?: string;
+    discordServerId?: string;
+    telegramUserId?: string;
+    telegramGroupId?: string;
+}
+
+export interface SessionInfo {
+    id: string | undefined;
+    platform: number | undefined;
+    groupId: string | undefined;
+    members?: string[];
+}
+
+export interface UserInfo {
+    id?: string;
+    exists?: boolean;
+    inSession?: boolean;
+    sessionInfo?: SessionInfo;
+}
+
 export interface Artist {
     name: string;
     link: string;
@@ -21,6 +48,14 @@ export interface PlaylistInfo {
 export interface AlbumInfo extends PlaylistInfo {}
 
 export type ShuffleRepeatState = boolean | "off" | "context" | "track";
+
+export interface MethodStatus {
+    done: boolean | undefined;
+    message?: string | undefined;
+    error?: any;
+    data?: any;
+    rawData?: any;
+}
 
 export interface RequestStatus {
     successfull: boolean;

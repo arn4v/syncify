@@ -1,12 +1,13 @@
 import { DataHelper } from "../data/data_helper";
 import {
-    PlatformInfo,
     MethodStatus,
+    PlatformInfo,
+    RequestStatus,
+    ShuffleRepeatState,
     SpotifyInfo,
     UserInfo,
-} from "../interfaces/global";
+} from "../interfaces/interfaces";
 import { RequestsHandler } from "./requests_handler";
-import { ShuffleRepeatState, RequestStatus } from "../interfaces/spotify";
 
 async function fetchAndRequest(
     platformInfo: PlatformInfo,

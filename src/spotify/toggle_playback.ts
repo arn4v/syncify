@@ -5,8 +5,8 @@ import {
     PlatformInfo,
     SpotifyInfo,
     UserInfo,
-} from "../interfaces/global";
-import { RequestStatus } from "../interfaces/spotify";
+    RequestStatus,
+} from "../interfaces/interfaces";
 import { RequestsHandler } from "./requests_handler";
 
 // This function serves to fetch spotify access/refresh token for

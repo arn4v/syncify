@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-import { SpotifyInfo, RequestStatus } from "../../interfaces/interfaces";
-import { defaultStatusTemplate } from "../../helpers/status_template";
+import { SpotifyInfo, RequestStatus } from "../../interfaces";
+import { defaultStatusTemplate } from "../../helpers";
 import { refreshAccessToken } from "./refresh_tokens";
 
 export async function playlistAlbumItemsRequest(

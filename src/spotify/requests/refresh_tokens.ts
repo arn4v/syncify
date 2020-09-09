@@ -1,6 +1,6 @@
 import axios from "axios";
 import qs from "qs";
-import { endpoints } from "./endpoints";
+const endpoints = require('../endpoints')
 
 export async function refreshAccessToken(refresh_token: any) {
     let newAccessToken: string;

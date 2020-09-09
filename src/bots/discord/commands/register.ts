@@ -1,6 +1,6 @@
-import { Client, Message } from "discord.js";
 import querystring from "querystring";
-import { SERVER_URL } from "../../../helpers/url_helper";
+import { Message } from "discord.js";
+import { SERVER_URL } from "../../../helpers";
 
 module.exports = {
     name: "register",

@@ -6,7 +6,7 @@ import {
     SpotifyInfo,
     UserInfo,
     RequestStatus,
-} from "../interfaces/interfaces";
+} from "../interfaces";
 import { RequestsHandler } from "./requests_handler";
 
 // This function serves to fetch spotify access/refresh token for

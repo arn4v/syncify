@@ -4,7 +4,7 @@ import {
     SpotifyInfo,
     RequestStatus,
     MethodStatus,
-} from "../interfaces/interfaces";
+} from "../interfaces";
 import { RequestsHandler } from "./requests_handler";
 
 export async function getPlaylistOrAlbumItems(

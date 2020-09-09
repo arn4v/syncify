@@ -1,5 +1,5 @@
 import { MessageEmbed } from "discord.js";
-import { MethodStatus, Track } from "../../../interfaces/interfaces";
+import { MethodStatus, Track } from "../../../interfaces";
 import { getTrackInfo } from "../../../spotify/track_info";
 
 module.exports = {

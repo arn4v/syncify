@@ -1,14 +1,14 @@
 import { DataHelper } from "../data/data_helper";
-import { RequestsHandler } from "./requests_handler";
-import { getPlaylistOrAlbumItems } from "./playlist_helper";
-import { trackLinkValidator } from "../helpers/spotify_link_validator";
+import { trackLinkValidator } from "../helpers";
 import {
     MethodStatus,
-    UserInfo,
-    SpotifyInfo,
     PlatformInfo,
     RequestStatus,
-} from "../interfaces/interfaces";
+    SpotifyInfo,
+    UserInfo,
+} from "../interfaces";
+import { getPlaylistOrAlbumItems } from "./playlist_helper";
+import { RequestsHandler } from "./requests_handler";
 
 async function fetchAndRequest(
     platformInfo: PlatformInfo,
@@ -100,7 +100,7 @@ export async function playOrAddToQueue(
                             );
                             try {
                                 for (const member of members) {
-                                    let platInfo = platformInfo;
+                                    let platInfo: PlatformInfo = platformInfo;
                                     platInfo.type == 1
                                         ? (platInfo.discordUserId = member)
                                         : (platInfo.telegramUserId = member);

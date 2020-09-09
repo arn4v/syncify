@@ -6,7 +6,7 @@ import {
     SpotifyInfo,
     UserInfo,
     RequestStatus,
-} from "../interfaces/interfaces";
+} from "../interfaces";
 
 async function fetchAndRequest(platformInfo: PlatformInfo, requestType: 1 | 2) {
     let done = false;

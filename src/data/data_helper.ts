@@ -14,7 +14,7 @@ import {
     SessionInfo,
     SpotifyInfo,
     UserInfo,
-} from "../interfaces/interfaces";
+} from "../interfaces";
 
 interface DeleteSessionParameters {
     onStart?: boolean;

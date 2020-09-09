@@ -6,7 +6,7 @@ import {
     ShuffleRepeatState,
     SpotifyInfo,
     UserInfo,
-} from "../interfaces/interfaces";
+} from "../interfaces";
 import { RequestsHandler } from "./requests_handler";
 
 async function fetchAndRequest(

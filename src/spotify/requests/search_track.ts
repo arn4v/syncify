@@ -1,8 +1,8 @@
 import axios from "axios";
-import { endpoints } from "./endpoints";
 import { DataHelper } from "../../data/data_helper";
+import { PlatformInfo } from "../../interfaces";
 import { refreshAccessToken } from "./refresh_tokens";
-import { PlatformInfo } from "../../interfaces/interfaces";
+const endpoints = require("../endpoints");
 
 async function searchSpotify(platformInfo: PlatformInfo, query: string) {
     let userId: string | undefined =

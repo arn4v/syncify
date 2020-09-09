@@ -1,13 +1,13 @@
 import Axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-import { defaultStatusTemplate } from "../helpers/status_template";
+import { defaultStatusTemplate } from "../helpers";
 import {
     EndpointInfo,
-    MethodStatus,
     RequestFuncConfig,
     RequestStatus,
     ShuffleRepeatState,
     SpotifyInfo,
-} from "../interfaces/interfaces";
+    Track,
+} from "../interfaces";
 import { playlistAlbumItemsRequest } from "./requests/playlist_album";
 
 const endpoints = require("./endpoints");
@@ -57,7 +57,7 @@ export class AxiosHelper {
         return config;
     }
 
-    static async apiRequest({
+    static async request({
         endpoint_info,
         spotify_info,
     }: RequestFuncConfig): Promise<RequestStatus> {
@@ -86,7 +86,7 @@ export class AxiosHelper {
                     refresh_endpoint_info.params = refresh_endpoint_info.params(
                         spotify_info.spotifyRefreshToken
                     );
-                    await this.apiRequest({
+                    await this.request({
                         spotify_info: spotify_info,
                         endpoint_info: refresh_endpoint_info,
                     }).then(async (res: RequestStatus) => {
@@ -133,7 +133,7 @@ export class RequestsHandler {
     static nextPreviousTrack(spotifyInfo: SpotifyInfo, requestType: 1 | 2) {
         const endpointInfo: EndpointInfo =
             requestType == 1 ? endpoints.next_track : endpoints.previous_track;
-        return AxiosHelper.apiRequest({
+        return AxiosHelper.request({
             spotify_info: spotifyInfo,
             endpoint_info: endpointInfo,
         });
@@ -142,30 +142,45 @@ export class RequestsHandler {
     static togglePlayback(spotifyInfo: SpotifyInfo, requestType: number) {
         const endpointInfo: EndpointInfo = endpoints.togglePlayback;
         endpointInfo.data = endpointInfo.params(requestType);
-        return AxiosHelper.apiRequest({
+        return AxiosHelper.request({
             spotify_info: spotifyInfo,
             endpoint_info: endpointInfo,
         });
     }
 
-    // static trackInfo(spotifyInfo: SpotifyInfo) {
-    //     const endpointInfo: EndpointInfo = endpoints.current_track
-    //     this.axiosRequest();
-    //     trackInfo.id = response.data.item.uri;
-    //     trackInfo.link = response.data.item.external_urls.spotify;
-    //     trackInfo.name = response.data.item.name;
-    //     trackInfo.position = response.data.progress_ms;
-    //     trackInfo.uri = response.data.item.uri;
-    //     response.data.item.artists.forEach((data: any) => {
-    //         trackInfo.artists?.push({
-    //             name: data.name,
-    //             link: data.external_urls.spotify,
-    //             uri: data.uri,
-    //         });
-    //     });
-    //     status.trackInfo = trackInfo;
-    //     return trackInfoRequest(spotifyInfo);
-    // }
+    static async trackInfo(spotifyInfo: SpotifyInfo): Promise<RequestStatus> {
+        const endpointInfo: EndpointInfo = endpoints.current_track;
+        let status: RequestStatus = defaultStatusTemplate;
+        let trackInfo: Track = {
+            name: undefined,
+            id: undefined,
+            link: undefined,
+            uri: undefined,
+            artists: [],
+        };
+        await AxiosHelper.request({
+            endpoint_info: endpointInfo,
+            spotify_info: spotifyInfo,
+        }).then(async (response: RequestStatus) => {
+            status = response;
+            delete status.response;
+            delete status.status;
+            trackInfo.id = response.response.item.uri;
+            trackInfo.link = response.response.item.external_urls.spotify;
+            trackInfo.name = response.response.item.name;
+            trackInfo.position = response.response.progress_ms;
+            trackInfo.uri = response.response.item.uri;
+            response.response.item.artists.forEach((data: any) => {
+                trackInfo.artists?.push({
+                    name: data.name,
+                    link: data.external_urls.spotify,
+                    uri: data.uri,
+                });
+            });
+            status.trackInfo = trackInfo;
+        });
+        return status;
+    }
 
     static toggleShuffleRepeat(
         requestType: number,
@@ -177,7 +192,7 @@ export class RequestsHandler {
                 ? endpoints.shuffle_playback
                 : endpoints.repeat_playback;
         endpointInfo.params = endpointInfo.params(toggleState);
-        return AxiosHelper.apiRequest({
+        return AxiosHelper.request({
             spotify_info: spotifyInfo,
             endpoint_info: endpointInfo,
         });
@@ -186,7 +201,7 @@ export class RequestsHandler {
     static playTrack(spotifyInfo: SpotifyInfo, tracks: string[]) {
         const endpointInfo: EndpointInfo = endpoints.play_track;
         endpointInfo.data = endpointInfo.data(tracks);
-        return AxiosHelper.apiRequest({
+        return AxiosHelper.request({
             endpoint_info: endpointInfo,
             spotify_info: spotifyInfo,
         });
@@ -195,7 +210,7 @@ export class RequestsHandler {
     static queue(spotifyInfo: SpotifyInfo, trackUri: string) {
         const endpointInfo: EndpointInfo = endpoints.add_to_queue;
         endpointInfo.data = endpointInfo.data(trackUri);
-        return AxiosHelper.apiRequest({
+        return AxiosHelper.request({
             endpoint_info: endpointInfo,
             spotify_info: spotifyInfo,
         });
@@ -204,7 +219,7 @@ export class RequestsHandler {
     static seek(spotifyInfo: SpotifyInfo, position_ms: number) {
         const endpointInfo: EndpointInfo = endpoints.seek;
         endpointInfo.data = endpointInfo.params(position_ms);
-        return AxiosHelper.apiRequest({
+        return AxiosHelper.request({
             endpoint_info: endpointInfo,
             spotify_info: spotifyInfo,
         });

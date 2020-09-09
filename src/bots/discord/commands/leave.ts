@@ -1,5 +1,5 @@
 import { DataHelper } from "../../../data/data_helper";
-import { MethodStatus } from "../../../interfaces/interfaces";
+import { MethodStatus } from "../../../interfaces";
 
 module.exports = {
     name: "leave",

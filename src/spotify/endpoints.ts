@@ -1,4 +1,4 @@
-import { ShuffleRepeatState } from "../interfaces/interfaces";
+import { ShuffleRepeatState } from "../interfaces";
 
 module.exports = {
     play_track: {
@@ -113,10 +113,10 @@ module.exports = {
         success_status: [204],
         return_data: false,
     },
-    // search: {
-    //     url: "https://api.spotify.com/v1/search",
-    //     method: "get",
-    //     params: [{ name: "q" }, { name: "type" }, { name: "limit" }],
-    //     return_data: true,
-    // },
+    search: {
+        url: "https://api.spotify.com/v1/search",
+        method: "get",
+        params: [{ name: "q" }, { name: "type" }, { name: "limit" }],
+        return_data: true,
+    },
 };

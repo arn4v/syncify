@@ -1,6 +1,6 @@
 import { togglePlayback } from "../../../spotify/toggle_playback";
 import { getTrackInfo } from "../../../spotify/track_info";
-import { MethodStatus } from "../../../interfaces/interfaces";
+import { MethodStatus } from "../../../interfaces";
 
 module.exports = {
     name: "resume",

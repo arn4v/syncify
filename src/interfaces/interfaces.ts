@@ -57,6 +57,11 @@ export interface MethodStatus {
     rawData?: any;
 }
 
+export interface RequestFuncConfig {
+    endpoint_info: EndpointInfo;
+    spotify_info: SpotifyInfo;
+}
+
 export interface RequestStatus {
     successfull: boolean;
     status: number | undefined;
@@ -66,4 +71,14 @@ export interface RequestStatus {
     newAccessToken?: string;
     uris?: string[];
     trackInfo?: Track;
+}
+
+export interface EndpointInfo {
+    url: string;
+    method: "get" | "put" | "post";
+    success_status: number[];
+    return_data?: boolean;
+    custom_header?: any;
+    data?: any;
+    params?: any;
 }

@@ -1,4 +1,4 @@
-import { MethodStatus, RequestStatus } from "../interfaces/interfaces";
+import { RequestStatus } from "../interfaces/interfaces";
 
 export let defaultStatusTemplate: RequestStatus = {
     successfull: false,
